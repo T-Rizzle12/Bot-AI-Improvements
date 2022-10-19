@@ -1,0 +1,9 @@
+"AddonInfo"
+{
+  addonSteamAppID   	550
+  addontitle		"Bot AI Fix"
+  addonversion	    	"1.0"
+  addonauthor 	   	"T-Rizzle"
+  addonDescription  	"Allows bots to use melee more effectively and improves some bot behavior"
+  addonContent_Script 	1
+}
