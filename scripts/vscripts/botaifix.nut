@@ -24,6 +24,7 @@
 	}
 	::BotAIFix.FileExists <- function (fileName)
 	{
+		//Check to see if the file exists
 		local fileContents = FileToString(fileName);
 		if (fileContents == null)
 			return false;
@@ -32,6 +33,7 @@
 	}
 	::BotAIFix.StringReplace <- function (str, orig, replace)
 	{
+		//Slimzo showed me how to create lists after reading files
 		local expr = regexp(orig);
 		local ret = "";
 		local pos = 0;
@@ -54,6 +56,7 @@
 	}
 	::BotAIFix.LoadSettingsFromFile <- function (settings, scope)
 	{
+		//loads this addon's cvars
 		if(!settings)
 		{
 			return false;
@@ -70,6 +73,7 @@
 	}
 	::BotAIFix.Initialize <- function (modename, mapname)
 	{
+		//This is the main startup process for this addon
 		printl(modename);
 		printl(mapname);
 		if(!BotAIFix.FileExists("botaifix/cfg/settings.txt"))
@@ -177,6 +181,7 @@
 		}
 		if(load_convars != 0)
 		{
+			//These are the cvars for this addon
 			Convars.SetValue("allow_all_bot_survivor_team", 1);
 			Convars.SetValue("sb_all_bot_game", 1);
 			Convars.SetValue("sb_allow_shoot_through_survivors", 0);
@@ -188,6 +193,7 @@
 			Convars.SetValue("sb_combat_saccade_speed", 2250);
 			Convars.SetValue("sb_enforce_proximity_range", 2000);
 			Convars.SetValue("sb_far_hearing_range", 0xffffff);
+			//Bots should still have a reaction time
 			Convars.SetValue("sb_friend_immobilized_reaction_time_expert", 0.14);
 			Convars.SetValue("sb_friend_immobilized_reaction_time_hard", 0.14);
 			Convars.SetValue("sb_friend_immobilized_reaction_time_normal", 0.14);
@@ -206,14 +212,15 @@
 			Convars.SetValue("sb_separation_range", 300);
 			Convars.SetValue("sb_sidestep_for_horde", 1);
 			Convars.SetValue("sb_temp_health_consider_factor", 0.8);
-			Convars.SetValue("sb_threat_close_range", 100);
+			Convars.SetValue("sb_threat_close_range", 1000);
 			Convars.SetValue("sb_threat_exposure_stop", 0xffffff);
-			Convars.SetValue("sb_threat_far_range", 400000000);
+			Convars.SetValue("sb_threat_far_range", 10000);
 			Convars.SetValue("sb_threat_medium_range", 6000);
-			Convars.SetValue("sb_threat_very_close_range", 50);
+			Convars.SetValue("sb_threat_very_close_range", 1000);
 			Convars.SetValue("sb_threat_very_far_range", 0xffffff);
 			Convars.SetValue("sb_toughness_buffer", 20);
 			Convars.SetValue("sb_vomit_blind_time", 0);
+			//This helps with players not being able to join your server
 			Convars.SetValue("sv_consistency", 0);
 		}
 	}
@@ -407,6 +414,7 @@
 	}
 	::BotAIFix.VectorAngles <- function (forwardVector)
 	{
+		//Got this code from left4lib
 		local pitch = 0;
 		local yaw = 0;
 		
@@ -433,6 +441,7 @@
 	}
 	::BotAIFix.BotLookAt <- function (bot, target = null, deltaPitch = 0, deltaYaw = 0)
 	{
+		//Got this code from left4lib
 		local angles = bot.EyeAngles();
 		local position = null;
 		if (target != null)
@@ -559,37 +568,34 @@
 							Convars.SetValue("sb_melee_approach_victim", 1);
 						}
 						
-						if(tank_flee_distance >= tank_dist || melee_distance >= dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
+						if(improved_revive_ai != 0 && (tank_flee_distance >= tank_dist || melee_distance >= dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0))
 						{
-							if(improved_revive_ai != 0)
+							//This will make bots stop reviving players who are incapacitated when a tank and/or common infected is near
+							if(melee_distance >= dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
 							{
-								//This will make bots stop reviving players who are incapacitated when a tank and/or common infected is near
-								if(melee_distance >= dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
+								local player2 = NetProps.GetPropEntity(player, "m_reviveTarget");
+								NetProps.SetPropFloat(player2, "m_flProgressBarDuration", 0.0);
+								NetProps.SetPropEntity(player, "m_reviveTarget", -1);
+								NetProps.SetPropEntity(player2, "m_reviveOwner", -1);
+								if(common != null)
+								{
+									BotAIFix.BotLookAt(player, common, -6);
+								}
+								NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") | 2048);
+							}
+							if(tank != null && Director.IsTankInPlay())
+							{
+								CommandABot( { cmd = BOT_CMD_RETREAT, target = tank, bot = player } );
+								if(NetProps.GetPropInt(player, "m_reviveTarget") > 0)
 								{
 									local player2 = NetProps.GetPropEntity(player, "m_reviveTarget");
 									NetProps.SetPropFloat(player2, "m_flProgressBarDuration", 0.0);
 									NetProps.SetPropEntity(player, "m_reviveTarget", -1);
 									NetProps.SetPropEntity(player2, "m_reviveOwner", -1);
-									if(common != null)
-									{
-										BotAIFix.BotLookAt(player, common, -6);
-									}
-									NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") | 2048);
+									BotAIFix.BotLookAt(player, tank);
+									//NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") | 2048);
 								}
-								if(tank != null && Director.IsTankInPlay())
-								{
-									CommandABot( { cmd = BOT_CMD_RETREAT, target = tank, bot = player } );
-									if(NetProps.GetPropInt(player, "m_reviveTarget") > 0)
-									{
-										local player2 = NetProps.GetPropEntity(player, "m_reviveTarget");
-										NetProps.SetPropFloat(player2, "m_flProgressBarDuration", 0.0);
-										NetProps.SetPropEntity(player, "m_reviveTarget", -1);
-										NetProps.SetPropEntity(player2, "m_reviveOwner", -1);
-										BotAIFix.BotLookAt(player, tank);
-										//NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") | 2048);
-									}
 									
-								}
 							}
 						}
 						
@@ -602,7 +608,7 @@
 						if(holdingItem.GetClassname() == "weapon_sniper_scout" || holdingItem.GetClassname() == "weapon_sniper_military" || holdingItem.GetClassname() == "weapon_sniper_awp" || holdingItem.GetClassname() == "weapon_hunting_rifle" || holdingItem.GetClassname() == "weapon_melee" || holdingItem.GetClassname() == "weapon_chainsaw" || tank_flee_distance > tank_dist)
 						{
 							//If the infected get to far bots should swap back to their primary weapon if they have one and it has ammo
-							if("slot0" in inv && melee_abandon_distance < dist)
+							if("slot0" in inv && (melee_abandon_distance < dist || tank_flee_distance > tank_dist))
 							{
 								local primary_weapon = inv["slot0"];
 								local main_weapon = primary_weapon.GetClassname();
@@ -703,6 +709,7 @@ function Update()
    //}
    
    //The Update Script runs every second, this allows the bots to "think"
+	//This seems to not work when I put it into the think function
 	local current_team_melee = BotAIFix.CheckTeamMelee();
 	local max_survivors = BotAIFix.MaxSurvivors();
 	BotAIFix.FireCheck();
