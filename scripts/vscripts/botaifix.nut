@@ -482,6 +482,7 @@
 				{
 					item = inv["slot1"];
 				}
+				//I need to create a function to reduce clutter and automate this process
 				if(special != null)
 				{
 					special_dist = (special.GetOrigin() - player.GetOrigin()).Length();
