@@ -2,7 +2,7 @@
 //     Author : T-Rizzle
 //------------------------------------------------------
 
-printl("Including botaifix_events...\n");
+printl("Including botaifix_events...");
 printl("Bot AI Fix starting up!")
 
 ::BotAIFix.Events.OnGameEvent_weapon_reload <- function (params)
@@ -33,6 +33,14 @@ printl("Bot AI Fix starting up!")
 			BotAIFix.BotPressButton(player, BUTTON_SHOVE, 0.1);
 		}
 	}
+}
+::BotAIFix.Events.OnGameEvent_round_end <- function (params)
+{
+	BotAIFix.OnRoundEnd(params);
+}
+::BotAIFix.Events.OnGameEvent_map_transition <- function (params)
+{
+	BotAIFix.OnMapTransition(params);
 }
 ::BotAIFix.Events.OnGameEvent_player_disconnect <- function (params)
 {

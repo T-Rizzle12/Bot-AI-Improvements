@@ -18,7 +18,7 @@ function ScriptMode_Init( modename, mapname )
 	{
 		//bScriptedModeValid = false;
 		
-		printl("ScriptMode_Init EXCEPTION: " + exception);
+		printl("BotAIFix ScriptMode_Init EXCEPTION: " + exception);
 	}
 	
 	if ( !bScriptedModeValid )
