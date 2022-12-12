@@ -984,14 +984,9 @@ const IN_ZOOM = 524288;
 									//This tells bots to flee from the nearby tank
 									CommandABot( { cmd = 2, target = tank, bot = player } );
 									local velocity = player.GetVelocity();
-									local vel = velocity.x
-									if(vel > 0)
-									{
-										vel -= vel
-									}
-									player.SetVelocity(Vector(vel, velocity.y, velocity.z));
-									BotAIFix.BotPressButton(player, IN_BACK, 0.5);
-									BotAIFix.PlayerDisableButton(player, IN_FORWARD, 0.5);
+									player.SetVelocity(Vector(-220, velocity.y, velocity.z)); //This is kind of a cheat because the bot will be able to move at the speed of a player with green health
+									BotAIFix.BotPressButton(player, IN_BACK, 1);
+									BotAIFix.PlayerDisableButton(player, IN_FORWARD, 1);
 								}
 								if(tank_revive_abandon_distance >= tank_dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
 								{
@@ -1015,7 +1010,7 @@ const IN_ZOOM = 524288;
 							local primary_weapon = inv["slot0"];
 							local main_weapon = primary_weapon.GetClassname();
 							local PrimType = NetProps.GetPropInt(primary_weapon, "m_iPrimaryAmmoType");
-							if( improved_pistol_usage != 0 && 300 < dist && tank_flee_distance < tank_dist && 300 < special_dist && secondary_weapon != "weapon_melee" && secondary_weapon != "weapon_chainsaw")
+							if(improved_pistol_usage != 0 && 300 < dist && tank_flee_distance < tank_dist && 300 < special_dist && secondary_weapon != "weapon_melee" && secondary_weapon != "weapon_chainsaw")
 							{
 								if((player.IsInCombat() || NetProps.GetPropInt(player, "m_hasVisibleThreats")) && (main_weapon != "weapon_hunting_rifle" && main_weapon != "weapon_sniper_awp" && main_weapon != "weapon_sniper_military" && main_weapon != "weapon_sniper_scout"))
 								{
@@ -1030,10 +1025,15 @@ const IN_ZOOM = 524288;
 									player.SwitchToItem(secondary_weapon);
 									BotAIFix.BotPressButton(player, IN_RELOAD, 0.1);
 								}
+								else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && ((main_weapon == "weapon_sniper_scout" || main_weapon == "weapon_sniper_military" || main_weapon == "weapon_sniper_awp" || main_weapon == "weapon_hunting_rifle"))
+							        {
+									//Bots with sniper rifles should only use their pistols if infected get too close
+									player.SwitchToItem(main_weapon);
+							        }
 							}
 							else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && ((main_weapon != "weapon_autoshotgun" && main_weapon != "weapon_pumpshotgun" && main_weapon != "weapon_shotgun_chrome" && main_weapon != "weapon_shotgun_spas") || (holdingItem.GetClassname() == "weapon_melee" || holdingItem.GetClassname() == "weapon_chainsaw")))
 							{
-								//If the infected get too far bot and the bot has a sniper rifle or melee weapon should swap back to their primary weapon if they have one and it has ammo
+								//If the infected get too far and if the bot has a sniper rifle or melee weapon should swap back to their primary weapon if they have one and it has ammo
 								player.SwitchToItem(main_weapon);
 							}
 						}
@@ -1051,8 +1051,8 @@ const IN_ZOOM = 524288;
 						{
 							//Bots will hold down their attack button with chainsaws when the infected get too close
 							//printl("Attack!!");
-							BotAIFix.BotLookAt(player, common);
-							//BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, 0, 0, true);
+							//BotAIFix.BotLookAt(player, common);
+							BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0, true);
 						}
 						if(holdingItem.GetClassname() != "weapon_chainsaw" && shove_distance >= dist && (BotAIFix.CanTraceTo(player, common) || 40 >= dist) && !common.GetSequenceName(common.GetSequence()).find("Shoved"))
 						{
