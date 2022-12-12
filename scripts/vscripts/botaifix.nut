@@ -348,8 +348,8 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			Convars.SetValue("sb_locomotion_wait_threshold", 0); //I think this is how long a bot must stand still before it can move again
 			Convars.SetValue("sb_max_battlestation_range_from_human", 300);
 			Convars.SetValue("sb_max_scavenge_separation", 2000); //This is how far away bots are allowed to scavenge for supplies
-			Convars.SetValue("sb_near_hearing_range", 2500); //This is the range when a bot hears something that they should be consearnd about
-			Convars.SetValue("sb_neighbor_range", 100); //This is how close a bot needs to be to another survivor in order to use first aid
+			Convars.SetValue("sb_near_hearing_range", 2500); //This is the range when a bot hears something that they should be worried about
+			Convars.SetValue("sb_neighbor_range", 100); //This is how close a bot needs to be to another survivor in order for the bot to feel safe
 			Convars.SetValue("sb_normal_saccade_speed", 1500); //This is the bots "mouse sensitivity" when they are not fighting a horde, attacking wandering common infected is a good example of when this is used
 			Convars.SetValue("sb_path_lookahead_range", 0xffffff); //This is how far away a bot will look ahead of the group, until I find a good number I will leave it ridiculously high
 			Convars.SetValue("sb_reachability_cache_lifetime", 0); //This is how long a bot will consider an area walkable, if said area becomes blocked or hazardous the bot will not mark it unsafe until this time has passed
