@@ -12,7 +12,7 @@ const IN_BACK = 16;
 const IN_USE = 32;
 const IN_SHOVE = 2048;
 const IN_RELOAD = 8192;
-const IN_ZOOM = 524288;
+const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 
 	::BotAIFix <-
 	{
@@ -47,7 +47,7 @@ const IN_ZOOM = 524288;
 	}
 	::BotAIFix.FileExists <- function (fileName)
 	{
-		//Check to see if the file exists
+		//Checks to see if the file exists
 		local fileContents = FileToString(fileName);
 		if (fileContents == null)
 			return false;
@@ -108,6 +108,7 @@ const IN_ZOOM = 524288;
 	}
 	::BotAIFix.CanSeeLocation <- function (player, dest, tolerance = 50)
 	{
+		//This checks to see if the location specified can be seen by the entity specified
 		if (!BotAIFix.IsValidSurvivor(player))
 		{
 			printl("VSLib Warning: Player " + player + " is invalid.");
@@ -127,7 +128,7 @@ const IN_ZOOM = 524288;
 	}
 	::BotAIFix.CanSeeOtherEntity <- function (player, dest, tolerance = 50)
 	{
-		//This is will grab the distance for the selected entities
+		//This is will check to see if location specified can be seen by the entity, but this will onlt check the entitie's LOS, (Line of Sight)
 		if (!BotAIFix.IsValidSurvivor(player))
 		{
 			printl("VSLib Warning: Player " + player + " is invalid.");
@@ -152,9 +153,11 @@ const IN_ZOOM = 524288;
 	}
 	::BotAIFix.LoadSettingsFromFile <- function (settings, scope)
 	{
-		//loads this addon's cvars
+		//Loads this addon's cvars/settings
 		if(!settings)
 		{
+			error("[BAIF][ERROR] Settings file could not be found, recreating file with default setttings!\n");
+			BotAIFix.CreateSettingsFile();
 			return false;
 		}
 		foreach (setting in settings)
@@ -245,7 +248,7 @@ const IN_ZOOM = 524288;
 		local textString = FileToString("botaifix/cfg/const.nut");
 		local compiledscript = compilestring(textString);
 		compiledscript();
-		if (!("think_rate" in getconsttable()))
+		if (!("think_rate" in getconsttable())) //This makes sure that thet Const.nut is not corrupted or invalid
 		{
 			error("[BAIF][ERROR] Const.nut file is corrupted, recreating file with default setttings!\n");
 			local Think =
@@ -287,6 +290,7 @@ const IN_ZOOM = 524288;
 		printl("tank_revive_abandon_distance = " + BotAIFix.tank_revive_abandon_distance);
 		printl("incap_shoot_distance = " + BotAIFix.incap_shoot_distance);
 		
+		//Is this even needed, I need to verify if it does
 		load_convars = BotAIFix.load_convars;
 		allow_deadstopping = BotAIFix.allow_deadstopping;
 		improved_revive_ai = BotAIFix.improved_revive_ai;
@@ -307,6 +311,7 @@ const IN_ZOOM = 524288;
 		tank_revive_abandon_distance = BotAIFix.tank_revive_abandon_distance;
 		incap_shoot_distance = BotAIFix.incap_shoot_distance;
 		
+		//Its time to create the think function for the AI improvements, should I just use a timer instead like the other think functions?
 		local ThinkEnt = null;
 
 		if (!ThinkEnt || !ThinkEnt.IsValid())
@@ -327,24 +332,23 @@ const IN_ZOOM = 524288;
 			//These are the cvars for this addon
 			Convars.SetValue("allow_all_bot_survivor_team", 1);
 			Convars.SetValue("sb_all_bot_game", 1);
-			Convars.SetValue("sb_allow_shoot_through_survivors", 0);
+			Convars.SetValue("sb_allow_shoot_through_survivors", 0); //This stops bots from shooting through teammates
 			Convars.SetValue("sb_battlestation_give_up_range_from_human", 550);
 			Convars.SetValue("sb_battlestation_human_hold_time", 0.01);
-			Convars.SetValue("sb_debug_apoproach_wait_time", 0);
-			Convars.SetValue("sb_close_checkpoint_door_interval", 0.14);
-			Convars.SetValue("sb_enforce_proximity_lookat_timeout", 0);
-			Convars.SetValue("sb_combat_saccade_speed", 2250);
-			Convars.SetValue("sb_enforce_proximity_range", 10000);
-			Convars.SetValue("sb_far_hearing_range", 3000);
-			//Bots should still have a reaction time
-			Convars.SetValue("sb_friend_immobilized_reaction_time_expert", 0.1);
-			Convars.SetValue("sb_friend_immobilized_reaction_time_hard", 0.1);
-			Convars.SetValue("sb_friend_immobilized_reaction_time_normal", 0.1);
-			Convars.SetValue("sb_friend_immobilized_reaction_time_vs", 0.1);
-			Convars.SetValue("sb_locomotion_wait_threshold", 0);
+			Convars.SetValue("sb_debug_apoproach_wait_time", 0); //I just noticed that the l4d2 devs misspelled approach, it still works as intended though
+			Convars.SetValue("sb_close_checkpoint_door_interval", 0.14); //Is this too high of a number?
+			Convars.SetValue("sb_enforce_proximity_lookat_timeout", 0); //This might be too low
+			Convars.SetValue("sb_combat_saccade_speed", 2250); //This is the bots "mouse sensitivity" when their is a horde or special infected
+			Convars.SetValue("sb_enforce_proximity_range", 10000); //This stops bots from teleporting to the group if they get too far
+			Convars.SetValue("sb_far_hearing_range", 3000); //This is how far bots can "hear"
+			Convars.SetValue("sb_friend_immobilized_reaction_time_expert", 0.1); //Bots should still have a reaction time
+			Convars.SetValue("sb_friend_immobilized_reaction_time_hard", 0.1); //Bots should still have a reaction time
+			Convars.SetValue("sb_friend_immobilized_reaction_time_normal", 0.1); //Bots should still have a reaction time
+			Convars.SetValue("sb_friend_immobilized_reaction_time_vs", 0.1); //Bots should still have a reaction time
+			Convars.SetValue("sb_locomotion_wait_threshold", 0); //I think this is how long a bot must stand still before it can move again
 			Convars.SetValue("sb_max_battlestation_range_from_human", 300);
-			Convars.SetValue("sb_max_scavenge_separation", 2000);
-			Convars.SetValue("sb_near_hearing_range", 2500);
+			Convars.SetValue("sb_max_scavenge_separation", 2000); //This is how far away bots are allowed to scavenge for supplies
+			Convars.SetValue("sb_near_hearing_range", 2500); //This is the range when a bot hears something
 			Convars.SetValue("sb_neighbor_range", 100);
 			Convars.SetValue("sb_normal_saccade_speed", 1500);
 			Convars.SetValue("sb_path_lookahead_range", 0xffffff);
