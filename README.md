@@ -35,10 +35,13 @@ You can customize this addon's cvars, here is a guide on what each cvars does: [
 - Improve the method that forces bots to press buttons
 
 # Important Discussions:
-[Suggestions](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/6382186451026657878/)\n
-[Bugs](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/6382186451008463537/)\n
-[Known Bugs](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/6382186451008413200/)\n
+[Suggestions](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/6382186451026657878/)
+
+[Bugs](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/6382186451008463537/)
+
+[Known Bugs](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/6382186451008413200/)
 
 Check out my other addons:
-Left 4 Bots Chainsaw Pickup Fix: https://steamcommunity.com/sharedfiles/filedetails/?id=2809813258\n
+Left 4 Bots Chainsaw Pickup Fix: https://steamcommunity.com/sharedfiles/filedetails/?id=2809813258
+
 Bot Chatter: https://steamcommunity.com/sharedfiles/filedetails/?id=2857764764
