@@ -128,15 +128,15 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	}
 	::BotAIFix.CanSeeOtherEntity <- function (player, dest, tolerance = 50)
 	{
-		//This is will check to see if location specified can be seen by the entity, but this will onlt check the entitie's LOS, (Line of Sight)
+		//This is will check to see if location specified can be seen by the entity, but this will only check the entity's LOS, (Line of Sight)
 		if (!BotAIFix.IsValidSurvivor(player))
 		{
 			printl("VSLib Warning: Player " + player + " is invalid.");
 			return;
 		}
+		//Check to make sure it's not behind a wall or something
 		if (!BotAIFix.CanSeeLocation(player, dest.GetCenter(), tolerance))
 			return false;
-		//Check to make sure it's not behind a wall or something
 		local m_trace = { start = player.EyePosition(), end = dest.GetCenter(), ignore = player, mask = TRACE_MASK_SHOT };
 		TraceLine(m_trace);
 		
@@ -311,7 +311,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		tank_revive_abandon_distance = BotAIFix.tank_revive_abandon_distance;
 		incap_shoot_distance = BotAIFix.incap_shoot_distance;
 		
-		//Its time to create the think function for the AI improvements, should I just use a timer instead like the other think functions?
+		//This creates the think function for the AI improvements, should I just use a timer instead like the other think functions?
 		local ThinkEnt = null;
 
 		if (!ThinkEnt || !ThinkEnt.IsValid())
