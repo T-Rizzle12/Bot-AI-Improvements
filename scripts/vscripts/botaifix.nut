@@ -368,7 +368,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			Convars.SetValue("sb_threat_very_close_range", 50); //This causes bots to fire their weapons at infected if they enter this range even if the bot will miss said shot
 			Convars.SetValue("sb_threat_very_far_range", 3000); //Any infected past this range are not considered as threats to the bots even if they are a boss infected
 			Convars.SetValue("sb_toughness_buffer", 15); //When a bot considers who needs healing they add the specified HP to themselves when considering who needs healing
-			Convars.SetValue("sb_vomit_blind_time", 2); //Bots should shove for a few seconds after being coverd in boomer bile
+			Convars.SetValue("sb_vomit_blind_time", 2); //Bots should shove for a few seconds after being covered in boomer bile
 			Convars.SetValue("sv_consistency", 0); //This helps with players not being able to join your server
 		}
 	}
@@ -390,7 +390,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			::BotAIFix.Tanks[player.GetPlayerUserId()] <- player;
 		}
-		else if (("GetZombieType" in player) && !player.IsSurvivor())
+		else if (("GetZombieType" in player) && !player.IsSurvivor() && player.GetZombieType() != 8)
 		{
 			::BotAIFix.Special[player.GetPlayerUserId()] <- player;
 		}
@@ -431,10 +431,10 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	::BotAIFix.IsValidSurvivor <- function (player)
 	{
 		local team = NetProps.GetPropInt(player, "m_iTeamNum");
-		if (team == 2)
+		if (team == 2) //Team 2 is the survivors
 			return true;
 			
-		if (team != 4)
+		if (team != 4) //Team 4 is the Passing survivors
 			return false;
 		
 		//if (BotAIFix.ModeName != "coop" && BotAIFix.ModeName != "realism" && BotAIFix.ModeName != "versus" && BotAIFix.ModeName != "mutation12") // mutation12 = realism versus
@@ -641,8 +641,8 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	}
 	::BotAIFix.CheckTeamMelee <- function ()
 	{
-		local team_melee = 0;
 		//Checks if a bot and/or player has a chainsaw or melee weapon
+		local team_melee = 0;
 		foreach (id, surv in ::BotAIFix.Survivors)
 		{
 			if(surv && surv.IsValid())
@@ -693,9 +693,10 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 				local ent = g_ModeScript.CreateSingleSimpleEntityFromTable(kvs);
 				ent.ValidateScriptScope();
 				
+				local fire_time = Convars.GetFloat("inferno_flame_lifetime") - 0.1;
 				DoEntFire("!self", "SetParent", "!activator", 0, fire, ent); // I parent the nav blocker to the fire entity so it is automatically killed when the fire is gone
 				DoEntFire("!self", "BlockNav", "", 0, null, ent);
-				//DoEntFire("!self", "UnblockNav", "", Convars.GetFloat("inferno_flame_lifetime") - 0.1, null ent);
+				DoEntFire("!self", "UnblockNav", "", fire_time, null ent); //This should fix the bug of nav areas staying blocked even after the fire is gone
 			}
 		}
 	}
@@ -799,7 +800,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			}
 		}
 		
-		// Specials
+		// Special Infected
 		foreach (id, special in ::BotAIFix.Special)
 		{
 			if (!special || !special.IsValid())
@@ -811,8 +812,9 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	::BotAIFix.OnRoundStart <- function (params)
 	{
 		BotAIFixTimers.AddTimer("ValidCheck", 1, BotAIFix.ValidCheck, {}, true);
-		BotAIFixTimers.AddTimer("FireCheck", 0.85, BotAIFix.FireCheck, {}, true);
+		BotAIFixTimers.AddTimer("FireCheck", 1, BotAIFix.FireCheck, {}, true);
 		BotAIFixTimers.AddTimer("MiscThink", 1, BotAIFix.MiscThink, {}, true);
+		//Should I move the main think function into here?
 		BotAIFix.old_sb_max_team_melee_weapons = Convars.GetFloat("sb_max_team_melee_weapons").tointeger();
 	}
 	::BotAIFix.AddonStop <- function ()
@@ -820,6 +822,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		BotAIFixTimers.RemoveTimer("FireCheck");
 		BotAIFixTimers.RemoveTimer("ValidCheck");
 		BotAIFixTimers.RemoveTimer("MiscThink");
+		//Should I have the main think function disable itself when a round ends or on a map restart? 
 		
 		BotAIFix.Survivors = {};
 		BotAIFix.Bots = {};
