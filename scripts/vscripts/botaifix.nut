@@ -156,7 +156,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		//Loads this addon's cvars/settings
 		if(!settings)
 		{
-			error("[BAIF][ERROR] Settings file could not be found, recreating file with default setttings!\n");
+			error("[BAIF][ERROR] Settings file could not be found, recreating file with default settings!\n");
 			BotAIFix.CreateSettingsFile();
 			return false;
 		}
@@ -171,7 +171,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 				}
 				catch(exception)
 				{
-					error("[BAIF][ERROR] Settings file is corrupted, recreating file with default setttings!\n");
+					error("[BAIF][ERROR] Settings file is corrupted, recreating file with default settings!\n");
 					BotAIFix.CreateSettingsFile();
 				}
 			}
@@ -233,7 +233,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			local Think =
 			[
-				"const think_rate = 0.5",
+				"const botaifix_think_rate = 0.5",
 			]
 			local fileContents2 = ""
 			foreach(str in Think)
@@ -248,12 +248,12 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local textString = FileToString("botaifix/cfg/const.nut");
 		local compiledscript = compilestring(textString);
 		compiledscript();
-		if (!("think_rate" in getconsttable())) //This makes sure that thet Const.nut is not corrupted or invalid
+		if (!("botaifix_think_rate" in getconsttable())) //This makes sure that thet Const.nut is not corrupted or invalid
 		{
 			error("[BAIF][ERROR] Const.nut file is corrupted, recreating file with default setttings!\n");
 			local Think =
 			[
-				"const think_rate = 0.5",
+				"const botaifix_think_rate = 0.5",
 			]
 			local fileContents2 = ""
 			foreach(str in Think)
@@ -269,7 +269,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local compiledscript = compilestring(textString);
 		compiledscript();
 		
-		printl("think_rate = " + think_rate);
+		printl("botaifix_think_rate = " + botaifix_think_rate);
 		printl("load_convars = " + BotAIFix.load_convars);
 		printl("allow_deadstopping = " + BotAIFix.allow_deadstopping);
 		printl("improved_revive_ai = " + BotAIFix.improved_revive_ai);
@@ -360,12 +360,12 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			Convars.SetValue("sb_sidestep_for_horde", 1); //Bots will sidestep during hordes to acquire new infected targets
 			Convars.SetValue("sb_temp_health_consider_factor", 0.8); //Temp health will be multipled by this when bots consider who needs healing
 			Convars.SetValue("sb_close_threat_range", 50); //This causes bots to focus on the one zombie that enters this range until said zombie is either dead or has left said range
-			Convars.SetValue("sb_threat_close_range", 50); //This causes bots to not waste time aiming at infected if they enter this range even if when the bot will miss said shot
+			Convars.SetValue("sb_threat_close_range", 40); //This causes bots to not waste time aiming at infected if they enter this range even if when the bot will miss said shot
 			Convars.SetValue("sb_threat_exposure_stop", 300000); //Unknown what this does yet
 			Convars.SetValue("sb_threat_exposure_walk", 150000); //Unknown what this does yet
 			Convars.SetValue("sb_threat_far_range", 2500); //Bots will only attack zombies in this range if they are a part of a horde or are a special infected
 			Convars.SetValue("sb_threat_medium_range", 2000); //Bots will attack zombies at this range even if they are not attacking the group, aka wanders will be considered threats
-			Convars.SetValue("sb_threat_very_close_range", 50); //This causes bots to fire their weapons at infected if they enter this range even if the bot will miss said shot
+			Convars.SetValue("sb_threat_very_close_range", 40); //This causes bots to fire their weapons at infected if they enter this range even if the bot will miss said shot
 			Convars.SetValue("sb_threat_very_far_range", 3000); //Any infected past this range are not considered as threats to the bots even if they are a boss infected
 			Convars.SetValue("sb_toughness_buffer", 15); //When a bot considers who needs healing they add the specified HP to themselves when considering who needs healing
 			Convars.SetValue("sb_vomit_blind_time", 2); //Bots should shove for a few seconds after being covered in boomer bile
@@ -540,7 +540,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		}
 		return ret;
 	}
-        ::BotAIFix.SpitCheck <- function (player)
+	::BotAIFix.SpitCheck <- function (player)
 	{
 		//This will find the nearest spit entity and grab its distance from the player
 		local spit = null;
@@ -686,17 +686,18 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			nav_area = NavMesh.GetNearestNavArea(fire.GetOrigin(), 2048, false, false);
 			//printl(nav_area);
-			if(nav_area != null && nav_area.IsValid() && !nav_area.HasAttributes(1 << 31) && BotAIFix.NoCloseBots(nav_area))
+			if(nav_area != null && nav_area.IsValid() && (!nav_area.HasAttributes(1 << 31) && !nav_area.IsBlocked(2, false)) && BotAIFix.NoCloseBots(nav_area))
 			{
 				printl("Blocked " + nav_area);
-				local kvs = { classname = "script_nav_blocker", origin = fire.GetOrigin(), extent = Vector(150, 50, 150), teamToBlock = "2", affectsFlow = "0" };
+				local kvs = { classname = "script_nav_blocker", origin = fire.GetOrigin(), extent = Vector(150, 150, 150), teamToBlock = "2", affectsFlow = "0" };
 				local ent = g_ModeScript.CreateSingleSimpleEntityFromTable(kvs);
 				ent.ValidateScriptScope();
 				
-				local fire_time = Convars.GetFloat("inferno_flame_lifetime") - 0.1;
+				local fire_time = (Convars.GetFloat("inferno_flame_lifetime") - 1.0);
 				DoEntFire("!self", "SetParent", "!activator", 0, fire, ent); // I parent the nav blocker to the fire entity so it is automatically killed when the fire is gone
 				DoEntFire("!self", "BlockNav", "", 0, null, ent);
-				DoEntFire("!self", "UnblockNav", "", fire_time, null ent); //This should fix the bug of nav areas staying blocked even after the fire is gone
+				DoEntFire("!self", "UnblockNav", "", fire_time, null, ent); //This should fix the bug of nav areas staying blocked even after the fire is gone
+				//DoEntFire("!self", "RunScriptCode", "printl(\"Unblocked\")", fire_time, null, ent); //This was to check if the nav_area was unblocked
 			}
 		}
 	}
@@ -844,7 +845,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local params = null;
 		BotAIFix.OnInfectedHurt(params);
 		//printl("Think");
-		return think_rate;
+		return botaifix_think_rate;
 	}
 	::BotAIFix.MiscThink <- function (params)
 	{
@@ -923,16 +924,16 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 						BotAIFix.BotPressButton(player, IN_ATTACK);
 						if(!BotAIFix.SurvivorsHeld())
 						{
-						        BotAIFix.BotLookAt(player, common);
+						    BotAIFix.BotLookAt(player, common);
 						}
 					}
 					*/
-					if(!BotAIFix.SurvivorsHeld())
+					if(!BotAIFix.SurvivorsHeld() && incap_shoot_distance >= dist)
 					{
 						//This makes bots aim and attack nearby common infected
 						BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0, true);
 					}
-					else
+					else if(incap_shoot_distance >= dist)
 					{
 						//If a player or bot is being held by a special infected the bots should just spam click instead
 						BotAIFix.BotPressButton(player, IN_ATTACK, 0.1)
@@ -999,10 +1000,15 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							{
 								if(tank_flee_distance >= tank_dist)
 								{
+									if(150 > tank_dist)
+									{
+										//If I reset the AI I might be able to force the bot to retreat
+										CommandABot( { cmd = 3, bot = player } );
+									}
 									//This tells bots to flee from the nearby tank
 									CommandABot( { cmd = 2, target = tank, bot = player } );
-									local velocity = player.GetVelocity();
-									player.SetVelocity(Vector(-220, velocity.y, velocity.z)); //This is kind of a cheat because the bot will be able to move at the speed of a player with green health
+									//local velocity = player.GetVelocity();
+									//player.SetVelocity(Vector(-220, velocity.y, velocity.z)); //This is kind of a cheat because the bot will be able to move at the speed of a player with green health, Note: Doesn't appear to work though :(
 									BotAIFix.BotPressButton(player, IN_BACK, 1);
 									BotAIFix.PlayerDisableButton(player, IN_FORWARD, 1);
 								}
@@ -1044,10 +1050,10 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 									BotAIFix.BotPressButton(player, IN_RELOAD, 0.1);
 								}
 								else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && (main_weapon == "weapon_sniper_scout" || main_weapon == "weapon_sniper_military" || main_weapon == "weapon_sniper_awp" || main_weapon == "weapon_hunting_rifle"))
-							        {
+							    {
 									//Bots with sniper rifles should only use their pistols if infected get too close
 									player.SwitchToItem(main_weapon);
-							        }
+							    }
 							}
 							else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && ((main_weapon != "weapon_autoshotgun" && main_weapon != "weapon_pumpshotgun" && main_weapon != "weapon_shotgun_chrome" && main_weapon != "weapon_shotgun_spas") || (holdingItem.GetClassname() == "weapon_melee" || holdingItem.GetClassname() == "weapon_chainsaw")))
 							{
@@ -1065,17 +1071,23 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							}
 						}
 						
-						if(melee_attack_distance >= dist && (BotAIFix.CanTraceTo(player, common) || 40 >= dist) && (holdingItem.GetClassname() == "weapon_chainsaw" || holdingItem.GetClassname() == "weapon_melee"))
+						if(melee_attack_distance >= dist && (holdingItem.GetClassname() == "weapon_chainsaw" || BotAIFix.CanSeeOtherEntity(player, common, 50)) && (holdingItem.GetClassname() == "weapon_chainsaw" || holdingItem.GetClassname() == "weapon_melee"))
 						{
 							//Bots will hold down their attack button with chainsaws when the infected get too close
 							//printl("Attack!!");
 							BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0, true);
 						}
-						if(holdingItem.GetClassname() != "weapon_chainsaw" && shove_distance >= dist && (BotAIFix.CanTraceTo(player, common) || 40 >= dist) && !common.GetSequenceName(common.GetSequence()).find("Shoved"))
+						else if(holdingItem.GetClassname() != "weapon_chainsaw" && shove_distance >= dist && (BotAIFix.CanTraceTo(player, common) || 40 >= dist) && !common.GetSequenceName(common.GetSequence()).find("Shoved"))
 						{
 							//Have bots shove when an infected gets too close
 							//printl("Shove!!");
 							BotAIFix.BotPressButton(player, IN_SHOVE, 0.1, common, -6, 0, true);
+							if(holdingItem.GetClassname == "weapon_melee")
+							{
+								//This should make bots will melee move backwards if they had to shove and infected they couldn't see
+								BotAIFix.BotPressButton(player, IN_BACK, 1);
+								BotAIFix.PlayerDisableButton(player, IN_FORWARD, 1);
+							}
 						}
 						
 						if(!BotAIFix.SurvivorsHeld(1) && crouch_distance > dist && stand_distance < dist && witch_dist >= 500 && close_player_distance > player_dist && tank_flee_distance < tank_dist && spit_uncrouch_distance < spit_dist && !player.IsOnFire() && tactical_crouching != 0)
