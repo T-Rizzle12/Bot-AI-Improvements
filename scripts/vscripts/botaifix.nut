@@ -336,7 +336,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			Convars.SetValue("sb_battlestation_give_up_range_from_human", 550);
 			Convars.SetValue("sb_battlestation_human_hold_time", 0.01);
 			Convars.SetValue("sb_debug_apoproach_wait_time", 0); //I just noticed that the l4d2 devs misspelled approach, it still works as intended though
-			Convars.SetValue("sb_close_checkpoint_door_interval", 0.14); //Is this too high of a number?
+			Convars.SetValue("sb_close_checkpoint_door_interval", 0.5); //Is this too low of a number?
 			Convars.SetValue("sb_enforce_proximity_lookat_timeout", 0); //This might be too low
 			Convars.SetValue("sb_combat_saccade_speed", 2250); //This is the bots "mouse sensitivity" when their is a horde or special infected
 			Convars.SetValue("sb_enforce_proximity_range", 10000); //This stops bots from teleporting to the group if they get too far
@@ -360,12 +360,12 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			Convars.SetValue("sb_sidestep_for_horde", 1); //Bots will sidestep during hordes to acquire new infected targets
 			Convars.SetValue("sb_temp_health_consider_factor", 0.8); //Temp health will be multipled by this when bots consider who needs healing
 			Convars.SetValue("sb_close_threat_range", 50); //This causes bots to focus on the one zombie that enters this range until said zombie is either dead or has left said range
-			Convars.SetValue("sb_threat_close_range", 40); //This causes bots to not waste time aiming at infected if they enter this range even if when the bot will miss said shot
+			Convars.SetValue("sb_threat_close_range", 50); //This causes bots to not waste time aiming at infected if they enter this range even if when the bot will miss said shot
 			Convars.SetValue("sb_threat_exposure_stop", 300000); //Unknown what this does yet
 			Convars.SetValue("sb_threat_exposure_walk", 150000); //Unknown what this does yet
 			Convars.SetValue("sb_threat_far_range", 2500); //Bots will only attack zombies in this range if they are a part of a horde or are a special infected
 			Convars.SetValue("sb_threat_medium_range", 2000); //Bots will attack zombies at this range even if they are not attacking the group, aka wanders will be considered threats
-			Convars.SetValue("sb_threat_very_close_range", 40); //This causes bots to fire their weapons at infected if they enter this range even if the bot will miss said shot
+			Convars.SetValue("sb_threat_very_close_range", 50); //This causes bots to fire their weapons at infected if they enter this range even if the bot will miss said shot
 			Convars.SetValue("sb_threat_very_far_range", 3000); //Any infected past this range are not considered as threats to the bots even if they are a boss infected
 			Convars.SetValue("sb_toughness_buffer", 15); //When a bot considers who needs healing they add the specified HP to themselves when considering who needs healing
 			Convars.SetValue("sb_vomit_blind_time", 2); //Bots should shove for a few seconds after being covered in boomer bile
@@ -931,7 +931,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 					if(!BotAIFix.SurvivorsHeld() && incap_shoot_distance >= dist)
 					{
 						//This makes bots aim and attack nearby common infected
-						BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0, true);
+						BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0);
 					}
 					else if(incap_shoot_distance >= dist)
 					{
@@ -972,7 +972,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							}
 						}
 						
-						if(close_player_distance <= player_dist && !BotAIFix.SurvivorsHeld())
+						if(close_player_distance <= player_dist && !BotAIFix.SurvivorsHeld() && Director.IsFinaleVehicleReady())
 						{
 							//This makes bots with melee weapons not stray too far from the group
 							Convars.SetValue("sb_melee_approach_victim", 0);
@@ -1000,12 +1000,8 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							{
 								if(tank_flee_distance >= tank_dist)
 								{
-									if(150 > tank_dist)
-									{
-										//If I reset the AI I might be able to force the bot to retreat
-										CommandABot( { cmd = 3, bot = player } );
-									}
 									//This tells bots to flee from the nearby tank
+									CommandABot( { cmd = 0, target = tank, bot = player } ); //I think the attack command overrieds the revive command
 									CommandABot( { cmd = 2, target = tank, bot = player } );
 									//local velocity = player.GetVelocity();
 									//player.SetVelocity(Vector(-220, velocity.y, velocity.z)); //This is kind of a cheat because the bot will be able to move at the speed of a player with green health, Note: Doesn't appear to work though :(
@@ -1071,20 +1067,20 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							}
 						}
 						
-						if(melee_attack_distance >= dist && (holdingItem.GetClassname() == "weapon_chainsaw" || BotAIFix.CanSeeOtherEntity(player, common, 50)) && (holdingItem.GetClassname() == "weapon_chainsaw" || holdingItem.GetClassname() == "weapon_melee"))
+						if(melee_attack_distance >= dist && (holdingItem.GetClassname() == "weapon_chainsaw" || BotAIFix.CanSeeOtherEntity(player, common, 90)) && (holdingItem.GetClassname() == "weapon_chainsaw" || holdingItem.GetClassname() == "weapon_melee"))
 						{
 							//Bots will hold down their attack button with chainsaws when the infected get too close
 							//printl("Attack!!");
 							BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0, true);
 						}
-						else if(holdingItem.GetClassname() != "weapon_chainsaw" && shove_distance >= dist && (BotAIFix.CanTraceTo(player, common) || 40 >= dist) && !common.GetSequenceName(common.GetSequence()).find("Shoved"))
+						else if(holdingItem.GetClassname() != "weapon_chainsaw" && shove_distance >= dist && (BotAIFix.CanTraceTo(player, common) || 40 >= dist) && !(NetProps.GetPropInt(player, "m_reviveTarget") > 0) && !common.GetSequenceName(common.GetSequence()).find("Shoved"))
 						{
 							//Have bots shove when an infected gets too close
 							//printl("Shove!!");
 							BotAIFix.BotPressButton(player, IN_SHOVE, 0.1, common, -6, 0, true);
-							if(holdingItem.GetClassname == "weapon_melee")
+							if(holdingItem.GetClassname() == "weapon_melee")
 							{
-								//This should make bots will melee move backwards if they had to shove and infected they couldn't see
+								//This should make bots will melee move backwards if they had to shove an infected they couldn't see
 								BotAIFix.BotPressButton(player, IN_BACK, 1);
 								BotAIFix.PlayerDisableButton(player, IN_FORWARD, 1);
 							}
