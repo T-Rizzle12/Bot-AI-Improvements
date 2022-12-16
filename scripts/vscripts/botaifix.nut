@@ -972,7 +972,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							}
 						}
 						
-						if(close_player_distance <= player_dist && !BotAIFix.SurvivorsHeld() && Director.IsFinaleVehicleReady())
+						if(close_player_distance <= player_dist && !BotAIFix.SurvivorsHeld() || Director.IsFinaleVehicleReady())
 						{
 							//This makes bots with melee weapons not stray too far from the group
 							Convars.SetValue("sb_melee_approach_victim", 0);
@@ -1080,7 +1080,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							BotAIFix.BotPressButton(player, IN_SHOVE, 0.1, common, -6, 0, true);
 							if(holdingItem.GetClassname() == "weapon_melee")
 							{
-								//This should make bots will melee move backwards if they had to shove an infected they couldn't see
+								//This should make bots with melee should move backwards if they had to shove an infected
 								BotAIFix.BotPressButton(player, IN_BACK, 1);
 								BotAIFix.PlayerDisableButton(player, IN_FORWARD, 1);
 							}
@@ -1094,7 +1094,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 								BotAIFix.BotPressButton(player, IN_DUCK);
 								if(holdingItem.GetClassname() == "weapon_sniper_scout" || holdingItem.GetClassname() == "weapon_sniper_military" || holdingItem.GetClassname() == "weapon_sniper_awp" || holdingItem.GetClassname() == "weapon_hunting_rifle")
 								{
-									//If a bot has a sniperrifle they should scope in to improve their aim
+									//If a bot has a sniper rifle they should scope in to improve their aim
 									BotAIFix.BotPressButton(player, IN_ZOOM);
 								}
 							}
