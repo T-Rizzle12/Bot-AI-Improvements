@@ -10,6 +10,8 @@ const IN_DUCK = 4;
 const IN_FORWARD = 8;
 const IN_BACK = 16;
 const IN_USE = 32;
+const IN_LEFT = 512;
+const IN_RIGHT = 1024;
 const IN_SHOVE = 2048;
 const IN_RELOAD = 8192;
 const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
@@ -23,6 +25,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		Special = {}
 		ModeName = ""
 		MapName = ""
+		ThinkInterval = 1
 		load_convars = 0
 		allow_deadstopping = 1
 		improved_revive_ai = 1
@@ -38,7 +41,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		stand_distance = 200
 		melee_abandon_distance = 200
 		close_player_distance = 400
-		special_shove_distance = 150
+		special_shove_distance = 100
 		spit_uncrouch_distance = 200
 		tank_flee_distance = 400
 		tank_revive_abandon_distance = 400
@@ -197,7 +200,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			"stand_distance = 200",
 			"melee_abandon_distance = 200",
 			"close_player_distance = 400",
-			"special_shove_distance = 150",
+			"special_shove_distance = 100",
 			"spit_uncrouch_distance = 200",
 			"tank_flee_distance = 400",
 			"tank_revive_abandon_distance = 400",
@@ -233,7 +236,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			local Think =
 			[
-				"const botaifix_think_rate = 0.5",
+				"const BOTAIFIX_THINK_RATE = 0.1",
 			]
 			local fileContents2 = ""
 			foreach(str in Think)
@@ -248,12 +251,12 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local textString = FileToString("botaifix/cfg/const.nut");
 		local compiledscript = compilestring(textString);
 		compiledscript();
-		if (!("botaifix_think_rate" in getconsttable())) //This makes sure that thet Const.nut is not corrupted or invalid
+		if (!("BOTAIFIX_THINK_RATE" in getconsttable())) //This makes sure that thet Const.nut is not corrupted or invalid
 		{
 			error("[BAIF][ERROR] Const.nut file is corrupted, recreating file with default setttings!\n");
 			local Think =
 			[
-				"const botaifix_think_rate = 0.5",
+				"const BOTAIFIX_THINK_RATE = 0.1",
 			]
 			local fileContents2 = ""
 			foreach(str in Think)
@@ -269,7 +272,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local compiledscript = compilestring(textString);
 		compiledscript();
 		
-		printl("botaifix_think_rate = " + botaifix_think_rate);
+		printl("BOTAIFIX_THINK_RATE = " + BOTAIFIX_THINK_RATE);
 		printl("load_convars = " + BotAIFix.load_convars);
 		printl("allow_deadstopping = " + BotAIFix.allow_deadstopping);
 		printl("improved_revive_ai = " + BotAIFix.improved_revive_ai);
@@ -311,47 +314,31 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		tank_revive_abandon_distance = BotAIFix.tank_revive_abandon_distance;
 		incap_shoot_distance = BotAIFix.incap_shoot_distance;
 		
-		//This creates the think function for the AI improvements, should I just use a timer instead like the other think functions?
-		local ThinkEnt = null;
-
-		if (!ThinkEnt || !ThinkEnt.IsValid())
-		{
-			local ThinkEnt = SpawnEntityFromTable("info_target", { targetname = "botaifix" });
-			if(ThinkEnt)
-			{
-				//This is where the think function is created
-				ThinkEnt.ValidateScriptScope();
-				local scope = ThinkEnt.GetScriptScope();
-				scope["BotAIFixThinkFunc"] <- ::BotAIFix.Think;
-				AddThinkToEnt(ThinkEnt, "BotAIFixThinkFunc");
-				printl("BAI Entitiy created");
-			}
-		}
 		if(load_convars != 0)
 		{
 			//These are the cvars for this addon
 			Convars.SetValue("allow_all_bot_survivor_team", 1);
 			Convars.SetValue("sb_all_bot_game", 1);
 			Convars.SetValue("sb_allow_shoot_through_survivors", 0); //This stops bots from shooting through teammates
-			Convars.SetValue("sb_battlestation_give_up_range_from_human", 550);
-			Convars.SetValue("sb_battlestation_human_hold_time", 0.01);
+			Convars.SetValue("sb_battlestation_give_up_range_from_human", 150);
+			Convars.SetValue("sb_battlestation_human_hold_time", 0.1);
 			Convars.SetValue("sb_debug_apoproach_wait_time", 0); //I just noticed that the l4d2 devs misspelled approach, it still works as intended though
-			Convars.SetValue("sb_close_checkpoint_door_interval", 0.5); //Is this too low of a number?
+			Convars.SetValue("sb_close_checkpoint_door_interval", 0.2); //Is this too low of a number?
 			Convars.SetValue("sb_enforce_proximity_lookat_timeout", 0); //This might be too low
 			Convars.SetValue("sb_combat_saccade_speed", 2250); //This is the bots "mouse sensitivity" when their is a horde or special infected
-			Convars.SetValue("sb_enforce_proximity_range", 10000); //This stops bots from teleporting to the group if they get too far
+			Convars.SetValue("sb_enforce_proximity_range", 5000); //This stops bots from teleporting to the group if they get too far
 			Convars.SetValue("sb_far_hearing_range", 3000); //This is how far bots can "hear"
 			Convars.SetValue("sb_friend_immobilized_reaction_time_expert", 0.1); //Bots should still have a reaction time
 			Convars.SetValue("sb_friend_immobilized_reaction_time_hard", 0.1); //Bots should still have a reaction time
 			Convars.SetValue("sb_friend_immobilized_reaction_time_normal", 0.1); //Bots should still have a reaction time
 			Convars.SetValue("sb_friend_immobilized_reaction_time_vs", 0.1); //Bots should still have a reaction time
 			Convars.SetValue("sb_locomotion_wait_threshold", 0); //I think this is how long a bot must stand still before it can move again
-			Convars.SetValue("sb_max_battlestation_range_from_human", 300);
+			Convars.SetValue("sb_max_battlestation_range_from_human", 150);
 			Convars.SetValue("sb_max_scavenge_separation", 2000); //This is how far away bots are allowed to scavenge for supplies
 			Convars.SetValue("sb_near_hearing_range", 2500); //This is the range when a bot hears something that they should be worried about
 			Convars.SetValue("sb_neighbor_range", 100); //This is how close a bot needs to be to another survivor in order for the bot to feel safe
 			Convars.SetValue("sb_normal_saccade_speed", 1500); //This is the bots "mouse sensitivity" when they are not fighting a horde, attacking wandering common infected is a good example of when this is used
-			Convars.SetValue("sb_path_lookahead_range", 0xffffff); //This is how far away a bot will look ahead of the group, until I find a good number I will leave it ridiculously high
+			Convars.SetValue("sb_path_lookahead_range", 300); //This is how far away a bot will look ahead of the group, until I find a good number I will leave it ridiculously high
 			Convars.SetValue("sb_reachability_cache_lifetime", 0); //This is how long a bot will consider an area walkable, if said area becomes blocked or hazardous the bot will not mark it unsafe until this time has passed
 			Convars.SetValue("sb_rescue_vehicle_loading_range", 30); //This is how close a bot will try to be to an escape vehicle
 			Convars.SetValue("sb_separation_danger_max_range", 550); //If a player or bot gets this far from the group a bot will goto them to prevent them from being alone
@@ -452,7 +439,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local close_tank = 10000;
 		foreach (id, tank in ::BotAIFix.Tanks)
 		{
-			if (!tank.IsValid())
+			if (!tank || !tank.IsValid())
 				continue;
 			
 			if (tank.GetPlayerUserId() == player.GetPlayerUserId())
@@ -474,7 +461,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local close_player = 10000;
 		foreach (id, surv in ::BotAIFix.Survivors)
 		{
-			if (!surv.IsValid())
+			if (!surv || !surv.IsValid())
 				continue;
 			
 			if (surv.GetPlayerUserId() == player.GetPlayerUserId())
@@ -504,7 +491,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local close_special = 10000;
 		foreach (id, special in ::BotAIFix.Special)
 		{
-			if (!special.IsValid())
+			if (!special || !special.IsValid())
 				continue;
 			
 			if (special.GetPlayerUserId() == player.GetPlayerUserId())
@@ -547,10 +534,13 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local spit_dist = 10000;
 		while(spit = Entities.FindByClassname(spit, "insect_swarm"))
 		{
-			local dist = (spit.GetOrigin() - player.GetOrigin()).Length();
-			if(dist < spit_dist)
+			if(spit.IsValid())
 			{
-				spit_dist = dist;
+				local dist = (spit.GetOrigin() - player.GetOrigin()).Length();
+				if(dist < spit_dist)
+				{
+					spit_dist = dist;
+				}
 			}
 		}
 		return spit_dist;
@@ -562,10 +552,13 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		local witch_dist = 10000;
 		while(witch = Entities.FindByClassname(witch, "witch"))
 		{
-			local dist = (witch.GetOrigin() - player.GetOrigin()).Length();
-			if(dist < witch_dist)
+			if(witch.IsValid())
 			{
-				witch_dist = dist;
+				local dist = (witch.GetOrigin() - player.GetOrigin()).Length();
+				if(dist < witch_dist)
+				{
+					witch_dist = dist;
+				}
 			}
 		}
 		return witch_dist;
@@ -579,26 +572,25 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	}
 	::BotAIFix.BotPressButton <- function (player, button, holdtime = 0, target = null, deltaPitch = 0, deltaYaw = 0, lockLook = false, unlockLookDelay = 0)
 	{
-		//printl(button);
-		NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") | button);
-		if(lockLook)
+		if(player && player.IsValid())
 		{
-			NetProps.SetPropInt(player, "m_fFlags", NetProps.GetPropInt(player, "m_fFlags") | (1 << 5)); // set FL_FROZEN
-			if(unlockLookDelay == 0)
-			{
-				unlockLookDelay = holdtime;
-			}
-		}
-		if(target != null || deltaPitch != 0 || deltaYaw != 0)
-		{
-			BotAIFix.BotLookAt(player, target, deltaPitch, deltaYaw);
-		}
-		if(holdtime > 0)
-		{
-			BotAIFixTimers.AddTimer(null, holdtime, @(params) BotAIFix.BotStopPressingButton(params.player, params.button), { player = player, button = button });
+			//printl(button);
+			NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") | button);
 			if(lockLook)
 			{
-				BotAIFixTimers.AddTimer(null, unlockLookDelay, BotAIFix.UnfreezePlayer, { player = player });
+				NetProps.SetPropInt(player, "m_fFlags", NetProps.GetPropInt(player, "m_fFlags") | (1 << 5)); // set FL_FROZEN
+			}
+			if(target != null || deltaPitch != 0 || deltaYaw != 0)
+			{
+				BotAIFix.BotLookAt(player, target, deltaPitch, deltaYaw);
+			}
+			if(holdtime > 0)
+			{
+				BotAIFixTimers.AddTimer(null, holdtime, @(params) BotAIFix.BotStopPressingButton(params.player, params.button), { player = player, button = button });
+				if(lockLook)
+				{
+					BotAIFixTimers.AddTimer(null, holdtime + unlockLookDelay, BotAIFix.UnfreezePlayer, { player = player });
+				}
 			}
 		}
 	}
@@ -629,7 +621,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	{
 		foreach (id, surv in ::BotAIFix.Survivors)
 		{
-			if (surv.IsValid() && surv.IsDominatedBySpecialInfected())
+			if (surv && surv.IsValid() && surv.IsDominatedBySpecialInfected())
 			{
 				local dominator = surv.GetSpecialInfectedDominatingMe();
 				if(type == null || type = dominator.GetZombieType())
@@ -666,7 +658,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		//This will will stop the fire entity from being blocked if a bot is too close to it
 		foreach (id, bot in ::BotAIFix.Bots)
 		{
-			if(bot && bot.IsValid() && bot.IsSurvivor() && !bot.IsDead() && !bot.IsDying() && !bot.IsIncapacitated() && !bot.IsHangingFromLedge())
+			if(bot && bot.IsValid() && !bot.IsIncapacitated() && !bot.IsHangingFromLedge())
 			{
 				//printl((nav_area.GetCenter() - bot.GetOrigin()).Length());
 				if(200 > (nav_area.GetCenter() - bot.GetOrigin()).Length())
@@ -686,7 +678,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			nav_area = NavMesh.GetNearestNavArea(fire.GetOrigin(), 2048, false, false);
 			//printl(nav_area);
-			if(nav_area != null && nav_area.IsValid() && (!nav_area.HasAttributes(1 << 31) && !nav_area.IsBlocked(2, false)) && BotAIFix.NoCloseBots(nav_area))
+			if(nav_area && nav_area.IsValid() && (!nav_area.HasAttributes(1 << 31) && !nav_area.IsBlocked(2, false)) && BotAIFix.NoCloseBots(nav_area))
 			{
 				printl("Blocked " + nav_area);
 				local kvs = { classname = "script_nav_blocker", origin = fire.GetOrigin(), extent = Vector(150, 150, 150), teamToBlock = "2", affectsFlow = "0" };
@@ -704,20 +696,15 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	::BotAIFix.OnSmokerTongueGrab <- function (player, smoker, params)
 	{
 		//This makes the bot that was grabbed by the smoker aim and "hopefully" shoot the smoker
-		if(IsPlayerABot(player))
+		if(player && player.IsValid() && IsPlayerABot(player))
 		{
 			player.SetForwardVector(smoker.GetCenter() - player.GetCenter());
 		}
 	}
-	::BotAIFix.OnReviveEnd <- function (player, params)
-	{
-		//This fixes bots being forced to shoot after being revived
-		NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") & (~1));
-	}
-	::BotAIFix.GetDistance <- function (player, ent, default_dist = 500)
+	::BotAIFix.GetDistance <- function (player, ent, default_dist = 600)
 	{
 		//This is will grab the distance for the selected entities
-		if(ent != null && player != null)
+		if(ent && ent.IsValid() && player && player.IsValid())
 		{
 			return (ent.GetOrigin() - player.GetOrigin()).Length();
 		}
@@ -779,6 +766,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			if (!surv || !surv.IsValid())
 			{
+				printl("Removed invalid survivor from ::BotAIFix.Survivors");
 				delete ::BotAIFix.Survivors[id];
 			}
 		}
@@ -788,6 +776,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			if (!bot || !bot.IsValid())
 			{
+				printl("Removed invalid survivor bot from ::BotAIFix.Bots");
 				delete ::BotAIFix.Bots[id];
 			}
 		}
@@ -797,6 +786,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			if (!tank || !tank.IsValid())
 			{
+				printl("Removed invalid tank from ::BotAIFix.Tanks");
 				delete ::BotAIFix.Tanks[id];
 			}
 		}
@@ -806,16 +796,45 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			if (!special || !special.IsValid())
 			{
+				printl("Removed invalid special infected from ::BotAIFix.Special");
 				delete ::BotAIFix.Special[id];
 			}
 		}
 	}
+	::BotAIFix.FindThinkEnt <- function ()
+	{
+		//This finds the think function for this addon
+		local ThinkEntFinder = null;
+		while(ThinkEntFinder = Entities.FindByClassname(ThinkEntFinder, "info_target"))
+		{
+			if(ThinkEntFinder.GetName() == "botaifix")
+			{
+				return ThinkEntFinder;
+			}
+		}
+		return null;
+	}
 	::BotAIFix.OnRoundStart <- function (params)
 	{
-		BotAIFixTimers.AddTimer("ValidCheck", 1, BotAIFix.ValidCheck, {}, true);
-		BotAIFixTimers.AddTimer("FireCheck", 1, BotAIFix.FireCheck, {}, true);
-		BotAIFixTimers.AddTimer("MiscThink", 1, BotAIFix.MiscThink, {}, true);
-		//Should I move the main think function into here?
+		BotAIFixTimers.AddTimer("ValidCheck", 1.0, BotAIFix.ValidCheck, {}, true);
+		BotAIFixTimers.AddTimer("FireCheck", 1.0, BotAIFix.FireCheck, {}, true);
+		BotAIFixTimers.AddTimer("MiscThink", 1.0, BotAIFix.MiscThink, {}, true);
+		//This creates the think function for the AI improvements
+		local ThinkEnt = BotAIFix.FindThinkEnt();
+		
+		if (!ThinkEnt || !ThinkEnt.IsValid())
+		{
+			local ThinkEnt = SpawnEntityFromTable("info_target", { targetname = "botaifix" });
+			if(ThinkEnt)
+			{
+				//This is where the think function is created
+				ThinkEnt.ValidateScriptScope();
+				local scope = ThinkEnt.GetScriptScope();
+				scope["BotAIFixThinkFunc"] <- ::BotAIFix.MainThink;
+				AddThinkToEnt(ThinkEnt, "BotAIFixThinkFunc");
+				printl("BAI Entity created");
+			}
+		}
 		BotAIFix.old_sb_max_team_melee_weapons = Convars.GetFloat("sb_max_team_melee_weapons").tointeger();
 	}
 	::BotAIFix.AddonStop <- function ()
@@ -823,7 +842,12 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		BotAIFixTimers.RemoveTimer("FireCheck");
 		BotAIFixTimers.RemoveTimer("ValidCheck");
 		BotAIFixTimers.RemoveTimer("MiscThink");
-		//Should I have the main think function disable itself when a round ends or on a map restart? 
+		local ThinkEnt = BotAIFix.FindThinkEnt();
+		if(ThinkEnt && ThinkEnt.IsValid())
+		{
+			DoEntFire("!self", "Kill", "", 0, null, ThinkEnt);
+			printl("BAI Entity deleted");
+		}
 		
 		BotAIFix.Survivors = {};
 		BotAIFix.Bots = {};
@@ -839,17 +863,379 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	{
 		BotAIFix.AddonStop();
 	}
-	::BotAIFix.Think <- function ()
+	::BotAIFix.ValidWeaponCheck <- function (player, weapon)
 	{
-		//This is where the entire thinking process happens
-		local params = null;
-		BotAIFix.OnInfectedHurt(params);
-		//printl("Think");
-		return botaifix_think_rate;
+		local inv = {};
+		GetInvTable(player, inv);
+		if(!weapon || !weapon.IsValid())
+		{
+			//When a bot's chainsaw runs out of fuel sometimes the GetActiveWeapon fails, so I created this failsafe
+			local chainsaw_fix = inv["slot1"];
+			local holdingItem = chainsaw_fix.GetClassname();
+			player.SwitchToItem(holdingItem);
+			BotAIFix.PlayerUnDisableButton(player, IN_ATTACK);
+			BotAIFix.BotStopPressingButton(player, IN_ATTACK);
+			BotAIFix.BotStopPressingButton(player, IN_SHOVE);
+			return holdingItem;
+		}
+		return weapon;
+	}
+	::BotAIFix.MainThink <- function ()
+	{	
+		switch (BotAIFix.ThinkInterval)
+		{
+			case 1:
+			{
+				BotAIFix.IncapThink();
+				break;
+			}
+			case 2:
+			{
+				BotAIFix.CrouchThink();
+				break;
+			}
+			case 3:
+			{
+				BotAIFix.ReviveThink();
+				break;
+			}
+			case 4:
+			{
+				BotAIFix.SecondaryThink();
+				break;
+			}
+			case 5:
+			{
+				BotAIFix.MeleeThink();
+				BotAIFix.SpecialThink();
+				break;
+			}
+		}
+		
+		BotAIFix.ThinkInterval++;
+		if (BotAIFix.ThinkInterval > 5)
+		{
+			BotAIFix.ThinkInterval = 1;
+		}
+		
+		return BOTAIFIX_THINK_RATE;
+	}
+	::BotAIFix.IncapThink <- function ()
+	{
+		foreach (id, player in ::BotAIFix.Bots)
+		{
+			if(player && player.IsValid())
+			{
+				if(player.IsIncapacitated() && !player.IsHangingFromLedge() && !player.IsDominatedBySpecialInfected())
+				{
+					local common = BotAIFix.CommonCheck(player);
+					local dist = BotAIFix.GetDistance(player, common);
+					//I have to make sure the game does not disable the attack button
+					BotAIFix.PlayerUnDisableButton(player, IN_ATTACK);
+					BotAIFix.BotStopPressingButton(player, IN_SHOVE);
+					if(!BotAIFix.SurvivorsHeld() && incap_shoot_distance >= dist)
+					{
+						//This makes bots aim and attack nearby common infected
+						BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0);
+					}
+					else if(incap_shoot_distance >= dist)
+					{
+						//If a player or bot is being held by a special infected the bots should just spam click instead
+						BotAIFix.BotPressButton(player, IN_ATTACK, 0.1)
+					}
+				}
+			}
+		}
+	}
+	::BotAIFix.CrouchThink <- function ()
+	{
+		foreach (id, player in ::BotAIFix.Bots)
+		{
+			if(player && player.IsValid())
+			{
+				if(!player.IsIncapacitated() && !player.IsHangingFromLedge() && !player.IsDominatedBySpecialInfected())
+				{
+					local player_dist = BotAIFix.PlayerDistance(player);
+					local tank = BotAIFix.TankCheck(player);
+					local tank_dist = BotAIFix.GetDistance(player, tank, 10000);
+					local spit_dist = BotAIFix.SpitCheck(player);
+					local witch_dist = BotAIFix.WitchCheck(player);
+					local common = BotAIFix.CommonCheck(player);
+					local dist = BotAIFix.GetDistance(player, common);
+					local holdingItem = BotAIFix.ValidWeaponCheck(player, player.GetActiveWeapon());
+					
+					if(holdingItem && holdingItem.IsValid() && holdingItem.GetClassname() != "weapon_gascan" && holdingItem.GetClassname() != "weapon_cola_bottles" && holdingItem.GetClassname() != "weapon_pipe_bomb" && holdingItem.GetClassname() != "weapon_vomitjar" && holdingItem.GetClassname() != "weapon_molotov" && holdingItem.GetClassname() != "weapon_pain_pills" && holdingItem.GetClassname() != "weapon_adrenaline" && holdingItem.GetClassname() != "weapon_first_aid_kit" && holdingItem.GetClassname() != "weapon_defibrillator")
+					{
+						if(tactical_crouching == 0 || BotAIFix.SurvivorsHeld(1) || stand_distance >= dist || witch_dist < 500 || crouch_distance <= dist || close_player_distance <= player_dist || tank_flee_distance >= tank_dist || player.IsOnFire() || spit_uncrouch_distance >= spit_dist || holdingItem.GetClassname() == "weapon_gascan" || holdingItem.GetClassname() == "weapon_cola_bottles" || !NetProps.GetPropInt(player, "m_hasVisibleThreats") && !player.IsInCombat())
+						{
+							//This makes bots not crouch when an enemy is too close or too far
+							BotAIFix.BotStopPressingButton(player, IN_DUCK);
+							local maskButtons = player.GetButtonMask();
+							if((maskButtons & IN_ZOOM))
+							{
+								BotAIFix.BotStopPressingButton(player, IN_ZOOM);
+								DoEntFire("!self", "RunScriptCode", "BotAIFix.BotPressButton(self, BUTTON_ZOOM, 0.1)", 0.01, null, player);
+							}
+						}
+						if(tactical_crouching != 0 && !BotAIFix.SurvivorsHeld(1) && holdingItem.GetClassname() != "weapon_gascan" && holdingItem.GetClassname() != "weapon_cola_bottles" && crouch_distance > dist && stand_distance < dist && witch_dist >= 500 && close_player_distance > player_dist && tank_flee_distance < tank_dist && spit_uncrouch_distance < spit_dist && !player.IsOnFire())
+						{
+							if(NetProps.GetPropInt(player, "m_hasVisibleThreats") || player.IsInCombat())
+							{
+								//This makes bots crouch when an enemy is not too close or not too far
+								BotAIFix.BotPressButton(player, IN_DUCK);
+								if(holdingItem.GetClassname() == "weapon_sniper_scout" || holdingItem.GetClassname() == "weapon_sniper_military" || holdingItem.GetClassname() == "weapon_sniper_awp" || holdingItem.GetClassname() == "weapon_hunting_rifle")
+								{
+									//If a bot has a sniperrifle they should scope in to improve their aim
+									BotAIFix.BotPressButton(player, IN_ZOOM);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	::BotAIFix.ReviveThink <- function ()
+	{
+		foreach (id, player in ::BotAIFix.Bots)
+		{
+			if(player && player.IsValid())
+			{
+				if(!player.IsIncapacitated() && !player.IsHangingFromLedge() && !player.IsDominatedBySpecialInfected())
+				{
+					local tank = BotAIFix.TankCheck(player);
+					local tank_dist = BotAIFix.GetDistance(player, tank, 10000);
+					local common = BotAIFix.CommonCheck(player);
+					local dist = BotAIFix.GetDistance(player, common);
+					local holdingItem = BotAIFix.ValidWeaponCheck(player, player.GetActiveWeapon());
+					
+					if(holdingItem && holdingItem.IsValid() && holdingItem.GetClassname() != "weapon_gascan" && holdingItem.GetClassname() != "weapon_cola_bottles" && holdingItem.GetClassname() != "weapon_pipe_bomb" && holdingItem.GetClassname() != "weapon_vomitjar" && holdingItem.GetClassname() != "weapon_molotov" && holdingItem.GetClassname() != "weapon_pain_pills" && holdingItem.GetClassname() != "weapon_adrenaline" && holdingItem.GetClassname() != "weapon_first_aid_kit" && holdingItem.GetClassname() != "weapon_defibrillator")
+					{
+						if(improved_revive_ai != 0)
+						{
+							//This will make bots stop reviving players who are incapacitated when a tank and/or common infected is near
+							if(common_revive_abandon_distance >= dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
+							{
+								//This makes bots abandon revives when a common infected gets too close
+								local player2 = NetProps.GetPropEntity(player, "m_reviveTarget");
+								NetProps.SetPropFloat(player2, "m_flProgressBarDuration", 0.0);
+								NetProps.SetPropEntity(player, "m_reviveTarget", -1);
+								NetProps.SetPropEntity(player2, "m_reviveOwner", -1);
+								BotAIFix.BotPressButton(player, IN_SHOVE, 0.1, common, -6, 0, true); //I also make the bot shove the common that triggered this event
+								BotAIFix.PlayerDisableButton(player, IN_USE, 2.0);
+							}
+							if(tank != null && tank.IsValid() && Director.IsTankInPlay())
+							{
+								if(150 >= tank_dist)
+								{
+									//This tells bots to flee from the nearby tank
+									CommandABot( { cmd = 0, target = tank, bot = player } ); //I think the attack command overrides the revive command
+									CommandABot( { cmd = 2, target = tank, bot = player } );
+									BotAIFix.BotPressButton(player, IN_BACK, 2.0);
+									BotAIFix.PlayerDisableButton(player, IN_FORWARD, 2.0);
+									BotAIFix.PlayerDisableButton(player, IN_LEFT, 2.0);
+									BotAIFix.PlayerDisableButton(player, IN_RIGHT, 2.0);
+									//local velocity = player.GetVelocity();
+									//player.SetVelocity(Vector(-220, velocity.y, velocity.z)); //This is kind of a cheat because the bot will be able to move at the speed of a player with green health, Note: Doesn't appear to work though :(
+								}
+								if(tank_revive_abandon_distance >= tank_dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
+								{
+									//This makes bots abandon revives when a tank gets too close
+									local player2 = NetProps.GetPropEntity(player, "m_reviveTarget");
+									NetProps.SetPropFloat(player2, "m_flProgressBarDuration", 0.0);
+									NetProps.SetPropEntity(player, "m_reviveTarget", -1);
+									NetProps.SetPropEntity(player2, "m_reviveOwner", -1);
+									BotAIFix.BotLookAt(player, tank);
+									BotAIFix.PlayerDisableButton(player, IN_USE, 2.0);
+									CommandABot( { cmd = 2, target = tank, bot = player } );
+									//NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") | IN_SHOVE);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	::BotAIFix.SecondaryThink <- function ()
+	{
+		foreach (id, player in ::BotAIFix.Bots)
+		{
+			if(player && player.IsValid())
+			{
+				if(!player.IsIncapacitated() && !player.IsHangingFromLedge() && !player.IsDominatedBySpecialInfected())
+				{
+					local tank = BotAIFix.TankCheck(player);
+					local tank_dist = BotAIFix.GetDistance(player, tank, 10000);
+					local special = BotAIFix.SpecialCheck(player);
+					local special_dist = BotAIFix.GetDistance(player, special, 10000);
+					local common = BotAIFix.CommonCheck(player);
+					local dist = BotAIFix.GetDistance(player, common);
+					local holdingItem = BotAIFix.ValidWeaponCheck(player, player.GetActiveWeapon());
+					local inv = {};
+					GetInvTable(player, inv);
+					if(holdingItem && holdingItem.IsValid() && holdingItem.GetClassname() != "weapon_gascan" && holdingItem.GetClassname() != "weapon_cola_bottles" && holdingItem.GetClassname() != "weapon_pipe_bomb" && holdingItem.GetClassname() != "weapon_vomitjar" && holdingItem.GetClassname() != "weapon_molotov" && holdingItem.GetClassname() != "weapon_pain_pills" && holdingItem.GetClassname() != "weapon_adrenaline" && holdingItem.GetClassname() != "weapon_first_aid_kit" && holdingItem.GetClassname() != "weapon_defibrillator" && holdingItem.GetClassname() != "weapon_upgradepack_explosive" && holdingItem.GetClassname() != "weapon_upgradepack_incendiary")
+					{
+						if("slot1" in inv && "slot0" in inv)
+						{
+							//This handles everything pistol related
+							local secondary_weapon = inv["slot1"].GetClassname();
+							local primary_weapon = inv["slot0"];
+							local main_weapon = primary_weapon.GetClassname();
+							local PrimType = NetProps.GetPropInt(primary_weapon, "m_iPrimaryAmmoType");
+							if(improved_pistol_usage != 0 && secondary_weapon != "weapon_melee" && secondary_weapon != "weapon_chainsaw")
+							{
+								if(500 < dist && tank_flee_distance < tank_dist && 500 < special_dist && (player.IsInCombat() || NetProps.GetPropInt(player, "m_hasVisibleThreats")) && (main_weapon != "weapon_hunting_rifle" && main_weapon != "weapon_sniper_awp" && main_weapon != "weapon_sniper_military" && main_weapon != "weapon_sniper_scout"))
+								{
+									//If the infected get too far bots should swap to their pistols if they have one
+									player.SwitchToItem(secondary_weapon);
+								}
+								else if(inv["slot1"].Clip1() != inv["slot1"].GetMaxClip1() && (!player.IsInCombat() && !NetProps.GetPropInt(player, "m_hasVisibleThreats")))
+								{
+									//Bots should reload their pistols if they are not in combat and they need to be reloaded
+									//printl("Clip = " + inv["slot1"].Clip1());
+									//printl("MaxClip = " + inv["slot1"].GetMaxClip1());
+									player.SwitchToItem(secondary_weapon);
+									BotAIFix.BotPressButton(player, IN_RELOAD, 0.1);
+								}
+								else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && (main_weapon == "weapon_sniper_scout" || main_weapon == "weapon_sniper_military" || main_weapon == "weapon_sniper_awp" || main_weapon == "weapon_hunting_rifle"))
+							    {
+									//Bots with sniper rifles should only use their pistols if infected get too close
+									player.SwitchToItem(main_weapon);
+							    }
+							}
+							else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0)
+							{
+								//If the infected get too far the bot should swap back to their primary weapon if they have one and it has ammo
+								player.SwitchToItem(main_weapon);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	::BotAIFix.SpecialThink <- function ()
+	{
+		foreach (id, player in ::BotAIFix.Bots)
+		{
+			if(player && player.IsValid())
+			{
+				if(!player.IsIncapacitated() && !player.IsHangingFromLedge() && !player.IsDominatedBySpecialInfected())
+				{
+					local special = BotAIFix.SpecialCheck(player);
+					local special_dist = BotAIFix.GetDistance(player, special, 10000);
+					local holdingItem = BotAIFix.ValidWeaponCheck(player, player.GetActiveWeapon());
+					
+					if(holdingItem && holdingItem.IsValid() && holdingItem.GetClassname() != "weapon_pain_pills" && holdingItem.GetClassname() != "weapon_adrenaline" && holdingItem.GetClassname() != "weapon_first_aid_kit" && holdingItem.GetClassname() != "weapon_defibrillator")
+					{
+						if(special != null && special.IsValid() && allow_deadstopping != 0 && !(NetProps.GetPropInt(player, "m_reviveTarget") > 0))
+						{
+							//If a hunter or jockey gets too close try to dead stop them, "This will also help bots shove them off players as well."
+							if(special_shove_distance >= special_dist && !special.IsStaggering() && !special.IsGhost() && (special.GetZombieType() == 5 || special.GetZombieType() == 3))
+							{
+								BotAIFix.BotPressButton(player, IN_SHOVE, 0.1);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	::BotAIFix.MeleeThink <- function ()
+	{
+		foreach (id, player in ::BotAIFix.Bots)
+		{
+			if(player && player.IsValid())
+			{
+				local player_dist = BotAIFix.PlayerDistance(player);
+				local tank = BotAIFix.TankCheck(player);
+				local tank_dist = BotAIFix.GetDistance(player, tank, 10000);
+				local special = BotAIFix.SpecialCheck(player);
+				local special_dist = BotAIFix.GetDistance(player, special, 10000);
+				local witch_dist = BotAIFix.WitchCheck(player);
+				local common = BotAIFix.CommonCheck(player);
+				local dist = BotAIFix.GetDistance(player, common);
+				local inv = {};
+				GetInvTable(player, inv);
+				local item = null;
+				if("slot1" in inv)
+				{
+					item = inv["slot1"];
+				}
+				//printl(player.GetPlayerName() + "'s Closest human player distance: " + player_dist);
+				//printl(player.GetPlayerName() + "'s Closest common infected distance: " + dist);
+				//printl(player.GetPlayerName() + "'s Closest special infected distance: " + special_dist);
+				//printl(player.GetPlayerName() + "'s Closest tank distance: " + tank_dist);
+				//printl(player.GetPlayerName() + "'s Common infected sequence: " + common.GetSequenceName(common.GetSequence()));
+				
+				if(!player.IsIncapacitated() && !player.IsHangingFromLedge() && !player.IsDominatedBySpecialInfected())
+				{
+					local holdingItem = BotAIFix.ValidWeaponCheck(player, player.GetActiveWeapon());
+					if(holdingItem && holdingItem.IsValid() && holdingItem.GetClassname() != "weapon_gascan" && holdingItem.GetClassname() != "weapon_cola_bottles" && holdingItem.GetClassname() != "weapon_pipe_bomb" && holdingItem.GetClassname() != "weapon_vomitjar" && holdingItem.GetClassname() != "weapon_molotov" && holdingItem.GetClassname() != "weapon_pain_pills" && holdingItem.GetClassname() != "weapon_adrenaline" && holdingItem.GetClassname() != "weapon_first_aid_kit" && holdingItem.GetClassname() != "weapon_defibrillator")
+					{
+						if(close_player_distance <= player_dist && witch_dist < 500 &&!BotAIFix.SurvivorsHeld() || Director.IsFinaleVehicleReady())
+						{
+							//This makes bots with melee weapons not stray too far from the group
+							Convars.SetValue("sb_melee_approach_victim", 0);
+						}
+						if((close_player_distance > player_dist || BotAIFix.SurvivorsHeld()) && !Director.IsFinaleVehicleReady() && witch_dist >= 500)
+						{
+							//This makes bots with melee weapons attack nearby zombies more effectively
+							Convars.SetValue("sb_melee_approach_victim", 1);
+						}
+						
+						if(melee_attack_distance >= dist && (holdingItem.GetClassname() == "weapon_chainsaw" || BotAIFix.CanSeeOtherEntity(player, common, 90)))
+						{
+							//Bots will be more aggresive when attacking common infected with melee weapons and chainsaws
+							//printl("Attack!!");
+							if(holdingItem.GetClassname() == "weapon_chainsaw")
+							{
+								//If the bot has a chainsaw they should hold their attack button
+								BotAIFix.BotPressButton(player, IN_ATTACK, 1.0, common, -6, 0, true, 0.1);
+							}
+							else if(holdingItem.GetClassname() == "weapon_melee")
+							{
+								//This should help bots use their melee weapon on nearby common infected
+								BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0, true);
+							}
+						}
+						else if(holdingItem.GetClassname() != "weapon_chainsaw" && shove_distance >= dist && !(NetProps.GetPropInt(player, "m_reviveTarget") > 0) && !common.GetSequenceName(common.GetSequence()).find("Shoved"))
+						{
+							//Have bots shove when an infected gets too close
+							//printl("Shove!!");
+							BotAIFix.BotPressButton(player, IN_SHOVE, 0.1, common, -6, 0, true);
+							if(holdingItem.GetClassname() == "weapon_melee")
+							{
+								//This should make bots with melee will move backwards if they had to shove an common infected
+								BotAIFix.BotPressButton(player, IN_BACK, 2.0);
+								BotAIFix.PlayerDisableButton(player, IN_FORWARD, 2.0);
+								BotAIFix.PlayerDisableButton(player, IN_LEFT, 2.0);
+								BotAIFix.PlayerDisableButton(player, IN_RIGHT, 2.0);
+							}
+						}
+						
+						if(melee_distance >= dist && item && item.IsValid() && tank_flee_distance < tank_dist && BotAIFix.CanTraceTo(player, common))
+						{
+							//If the infected get too close, bots should pull out their melee weapon if they have one
+							if(item.GetClassname() == "weapon_melee" && holdingItem.GetClassname() != "weapon_melee")
+							{
+								player.SwitchToItem("weapon_melee");
+							}
+							else if(item.GetClassname() == "weapon_chainsaw" && holdingItem.GetClassname() != "weapon_chainsaw")
+							{
+								player.SwitchToItem("weapon_chainsaw");
+								BotAIFix.BotPressButton(player, IN_SHOVE, 2.7); //This will help bots shove with the chainsaw upon pulling it out
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	::BotAIFix.MiscThink <- function (params)
 	{
-		//This seems to not work when I put it into the think function, the function above this one
+		//This seems to not work when I put it into the main think function
 		local current_team_melee = BotAIFix.CheckTeamMelee();
 		local max_survivors = 0;
 		foreach (id, survivor in ::BotAIFix.Survivors)
@@ -873,249 +1259,6 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		{
 			//This will increase sb_max_team_melee_weapons by the amount of players with melee weapons and bots with chainsaws
 			Convars.SetValue("sb_max_team_melee_weapons", current_team_melee + BotAIFix.max_melee + BotAIFix.old_sb_max_team_melee_weapons);
-		}
-	}
-	::BotAIFix.OnInfectedHurt <- function (params)
-	{
-		foreach (id, player in ::BotAIFix.Bots)
-		{
-			if(player && player.IsValid() && player.IsSurvivor() && !player.IsDead() && !player.IsDying())
-			{
-				local player_dist = BotAIFix.PlayerDistance(player);
-				local tank = BotAIFix.TankCheck(player);
-				local tank_dist = BotAIFix.GetDistance(player, tank, 10000);
-				local special = BotAIFix.SpecialCheck(player);
-				local special_dist = BotAIFix.GetDistance(player, special, 10000);
-				local spit_dist = BotAIFix.SpitCheck(player);
-				local witch_dist = BotAIFix.WitchCheck(player);
-				local common = BotAIFix.CommonCheck(player);
-				local dist = BotAIFix.GetDistance(player, common);
-				local inv = {};
-				GetInvTable(player, inv);
-				local item = null;
-				if("slot1" in inv)
-				{
-					item = inv["slot1"];
-				}
-				//printl(player.GetPlayerName() + "'s Closest human player distance: " + player_dist);
-				//printl(player.GetPlayerName() + "'s Closest common infected distance: " + dist);
-				//printl(player.GetPlayerName() + "'s Closest special infected distance: " + special_dist);
-				//printl(player.GetPlayerName() + "'s Closest tank distance: " + tank_dist);
-				//printl(player.GetPlayerName() + "'s common infected m_nSkin: " + common.GetSequenceName(common.GetSequence()));
-				
-				if(player.IsIncapacitated() && !player.IsHangingFromLedge() && !player.IsDominatedBySpecialInfected())
-				{
-					local maskButtons = player.GetButtonMask();
-					//I have to make sure the game does not disable the attack button
-					BotAIFix.PlayerUnDisableButton(player, IN_ATTACK);
-					BotAIFix.BotStopPressingButton(player, IN_SHOVE);
-					//With the new button method this is redundant, I will keep this here just in case
-					/*
-					if((maskButtons & IN_ATTACK))
-					{
-						//Since you have to spam click in order to fire a pistol I have to tell the bot to release the attack key before shooting again
-						//printl("~attack");
-						BotAIFix.BotStopPressingButton(player, IN_ATTACK);
-					}
-					else if(incap_shoot_distance >= dist && !(maskButtons & IN_ATTACK))
-					{
-						//This forces the bot to use their attack key
-						//printl("attack");
-						BotAIFix.BotPressButton(player, IN_ATTACK);
-						if(!BotAIFix.SurvivorsHeld())
-						{
-						    BotAIFix.BotLookAt(player, common);
-						}
-					}
-					*/
-					if(!BotAIFix.SurvivorsHeld() && incap_shoot_distance >= dist)
-					{
-						//This makes bots aim and attack nearby common infected
-						BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0);
-					}
-					else if(incap_shoot_distance >= dist)
-					{
-						//If a player or bot is being held by a special infected the bots should just spam click instead
-						BotAIFix.BotPressButton(player, IN_ATTACK, 0.1)
-					}
-				}
-				if(!player.IsIncapacitated() && !player.IsHangingFromLedge() && !player.IsDominatedBySpecialInfected())
-				{
-					local holdingItem = player.GetActiveWeapon();
-					if(holdingItem == null || !holdingItem.IsValid())
-					{
-						//When a bot's chainsaw runs out of fuel sometimes the GetActiveWeapon fails, so I created this failsafe
-						local chainsaw_fix = inv["slot1"];
-						local holdingItem = chainsaw_fix.GetClassname();
-						player.SwitchToItem(holdingItem);
-						BotAIFix.PlayerUnDisableButton(player, IN_ATTACK);
-						BotAIFix.BotStopPressingButton(player, IN_ATTACK);
-						BotAIFix.BotStopPressingButton(player, IN_SHOVE);
-					}
-					if(holdingItem.IsValid() && (holdingItem.GetClassname() == "weapon_gascan" || holdingItem.GetClassname() == "weapon_cola_bottles" || holdingItem.GetClassname() == "weapon_pain_pills" || holdingItem.GetClassname() == "weapon_adrenaline" || holdingItem.GetClassname() == "weapon_pipe_bomb" || holdingItem.GetClassname() == "weapon_vomitjar" || holdingItem.GetClassname() == "weapon_molotov"))
-					{
-						//Fixes a bug where bots can't use healing or throwables because they were forced to shove
-						BotAIFix.BotStopPressingButton(player, IN_SHOVE);
-						BotAIFix.BotStopPressingButton(player, IN_DUCK);
-					}
-					if(holdingItem.IsValid() && holdingItem.GetClassname() != "weapon_gascan" && holdingItem.GetClassname() != "weapon_cola_bottles" && holdingItem.GetClassname() != "weapon_pipe_bomb" && holdingItem.GetClassname() != "weapon_vomitjar" && holdingItem.GetClassname() != "weapon_molotov" && holdingItem.GetClassname() != "weapon_pain_pills" && holdingItem.GetClassname() != "weapon_adrenaline" && holdingItem.GetClassname() != "weapon_first_aid_kit" && holdingItem.GetClassname() != "weapon_defibrillator")
-					{
-						if(tactical_crouching == 0 || BotAIFix.SurvivorsHeld(1) || stand_distance >= dist || witch_dist < 500 || crouch_distance <= dist || close_player_distance <= player_dist || tank_flee_distance >= tank_dist || player.IsOnFire() || spit_uncrouch_distance >= spit_dist || !NetProps.GetPropInt(player, "m_hasVisibleThreats") && !player.IsInCombat())
-						{
-							//This makes bots not crouch when an enemy is too close or too far
-							BotAIFix.BotStopPressingButton(player, IN_DUCK);
-							local maskButtons = player.GetButtonMask();
-							if((maskButtons & IN_ZOOM))
-							{
-								BotAIFix.BotStopPressingButton(player, IN_ZOOM);
-								//DoEntFire("!self", "RunScriptCode", "BotAIFix.BotPressButton(self, BUTTON_ZOOM, 0.01)", 0.01, null, player);
-							}
-						}
-						
-						if(close_player_distance <= player_dist && !BotAIFix.SurvivorsHeld() || Director.IsFinaleVehicleReady())
-						{
-							//This makes bots with melee weapons not stray too far from the group
-							Convars.SetValue("sb_melee_approach_victim", 0);
-						}
-						if(close_player_distance > player_dist || BotAIFix.SurvivorsHeld())
-						{
-							//This makes bots with melee weapons attack nearby zombies more effectively
-							Convars.SetValue("sb_melee_approach_victim", 1);
-						}
-						
-						if(improved_revive_ai != 0)
-						{
-							//This will make bots stop reviving players who are incapacitated when a tank and/or common infected is near
-							if(common_revive_abandon_distance >= dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
-							{
-								//This makes bots abandon revives when a common infected gets too close
-								local player2 = NetProps.GetPropEntity(player, "m_reviveTarget");
-								NetProps.SetPropFloat(player2, "m_flProgressBarDuration", 0.0);
-								NetProps.SetPropEntity(player, "m_reviveTarget", -1);
-								NetProps.SetPropEntity(player2, "m_reviveOwner", -1);
-								BotAIFix.BotPressButton(player, IN_SHOVE, 0.1, common, -6, 0, true); //I also make the bot shove the common that triggered this event
-								BotAIFix.PlayerDisableButton(player, IN_USE, 10.0);
-							}
-							if(tank != null && Director.IsTankInPlay())
-							{
-								if(tank_flee_distance >= tank_dist)
-								{
-									//This tells bots to flee from the nearby tank
-									CommandABot( { cmd = 0, target = tank, bot = player } ); //I think the attack command overrieds the revive command
-									CommandABot( { cmd = 2, target = tank, bot = player } );
-									//local velocity = player.GetVelocity();
-									//player.SetVelocity(Vector(-220, velocity.y, velocity.z)); //This is kind of a cheat because the bot will be able to move at the speed of a player with green health, Note: Doesn't appear to work though :(
-									BotAIFix.BotPressButton(player, IN_BACK, 1);
-									BotAIFix.PlayerDisableButton(player, IN_FORWARD, 1);
-								}
-								if(tank_revive_abandon_distance >= tank_dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
-								{
-									//This makes bots abandon revives when a tank gets too close
-									local player2 = NetProps.GetPropEntity(player, "m_reviveTarget");
-									NetProps.SetPropFloat(player2, "m_flProgressBarDuration", 0.0);
-									NetProps.SetPropEntity(player, "m_reviveTarget", -1);
-									NetProps.SetPropEntity(player2, "m_reviveOwner", -1);
-									BotAIFix.BotLookAt(player, tank);
-									BotAIFix.PlayerDisableButton(player, IN_USE, 2.0);
-									CommandABot( { cmd = 2, target = tank, bot = player } );
-									//NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") | IN_SHOVE);
-								}
-							}
-						}
-						
-						if("slot1" in inv && "slot0" in inv)
-						{
-							//This handles everything pistol related
-							local secondary_weapon = inv["slot1"].GetClassname();
-							local primary_weapon = inv["slot0"];
-							local main_weapon = primary_weapon.GetClassname();
-							local PrimType = NetProps.GetPropInt(primary_weapon, "m_iPrimaryAmmoType");
-							if(improved_pistol_usage != 0 && 300 < dist && tank_flee_distance < tank_dist && 300 < special_dist && secondary_weapon != "weapon_melee" && secondary_weapon != "weapon_chainsaw")
-							{
-								if((player.IsInCombat() || NetProps.GetPropInt(player, "m_hasVisibleThreats")) && (main_weapon != "weapon_hunting_rifle" && main_weapon != "weapon_sniper_awp" && main_weapon != "weapon_sniper_military" && main_weapon != "weapon_sniper_scout"))
-								{
-									//If the infected get too far bots should swap to their pistols if they have one
-									player.SwitchToItem(secondary_weapon);
-								}
-								else if(inv["slot1"].Clip1() != inv["slot1"].GetMaxClip1() && (!player.IsInCombat() && !NetProps.GetPropInt(player, "m_hasVisibleThreats")))
-								{
-									//Bots should reload their pistols if they are not in combat and they need to be reloaded
-									//printl("Clip = " + inv["slot1"].Clip1());
-									//printl("MaxClip = " + inv["slot1"].GetMaxClip1());
-									player.SwitchToItem(secondary_weapon);
-									BotAIFix.BotPressButton(player, IN_RELOAD, 0.1);
-								}
-								else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && (main_weapon == "weapon_sniper_scout" || main_weapon == "weapon_sniper_military" || main_weapon == "weapon_sniper_awp" || main_weapon == "weapon_hunting_rifle"))
-							    {
-									//Bots with sniper rifles should only use their pistols if infected get too close
-									player.SwitchToItem(main_weapon);
-							    }
-							}
-							else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && ((main_weapon != "weapon_autoshotgun" && main_weapon != "weapon_pumpshotgun" && main_weapon != "weapon_shotgun_chrome" && main_weapon != "weapon_shotgun_spas") || (holdingItem.GetClassname() == "weapon_melee" || holdingItem.GetClassname() == "weapon_chainsaw")))
-							{
-								//If the infected get too far and if the bot has a sniper rifle or melee weapon should swap back to their primary weapon if they have one and it has ammo
-								player.SwitchToItem(main_weapon);
-							}
-						}
-						
-						if(special != null && allow_deadstopping != 0)
-						{
-							//If a hunter or jockey gets too close try to dead stop them, "This will also help bots shove them off players as well."
-							if(special_shove_distance >= special_dist && !special.IsStaggering() && !special.IsGhost() && (special.GetZombieType() == 5 || special.GetZombieType() == 3))
-							{
-								BotAIFix.BotPressButton(player, IN_SHOVE, 0.1);
-							}
-						}
-						
-						if(melee_attack_distance >= dist && (holdingItem.GetClassname() == "weapon_chainsaw" || BotAIFix.CanSeeOtherEntity(player, common, 90)) && (holdingItem.GetClassname() == "weapon_chainsaw" || holdingItem.GetClassname() == "weapon_melee"))
-						{
-							//Bots will hold down their attack button with chainsaws when the infected get too close
-							//printl("Attack!!");
-							BotAIFix.BotPressButton(player, IN_ATTACK, 0.1, common, -6, 0, true);
-						}
-						else if(holdingItem.GetClassname() != "weapon_chainsaw" && shove_distance >= dist && (BotAIFix.CanTraceTo(player, common) || 40 >= dist) && !(NetProps.GetPropInt(player, "m_reviveTarget") > 0) && !common.GetSequenceName(common.GetSequence()).find("Shoved"))
-						{
-							//Have bots shove when an infected gets too close
-							//printl("Shove!!");
-							BotAIFix.BotPressButton(player, IN_SHOVE, 0.1, common, -6, 0, true);
-							if(holdingItem.GetClassname() == "weapon_melee")
-							{
-								//This should make bots with melee should move backwards if they had to shove an infected
-								BotAIFix.BotPressButton(player, IN_BACK, 1);
-								BotAIFix.PlayerDisableButton(player, IN_FORWARD, 1);
-							}
-						}
-						
-						if(!BotAIFix.SurvivorsHeld(1) && crouch_distance > dist && stand_distance < dist && witch_dist >= 500 && close_player_distance > player_dist && tank_flee_distance < tank_dist && spit_uncrouch_distance < spit_dist && !player.IsOnFire() && tactical_crouching != 0)
-						{
-							if(NetProps.GetPropInt(player, "m_hasVisibleThreats") || player.IsInCombat())
-							{
-								//This makes bots crouch when an enemy is not too close or not too far
-								BotAIFix.BotPressButton(player, IN_DUCK);
-								if(holdingItem.GetClassname() == "weapon_sniper_scout" || holdingItem.GetClassname() == "weapon_sniper_military" || holdingItem.GetClassname() == "weapon_sniper_awp" || holdingItem.GetClassname() == "weapon_hunting_rifle")
-								{
-									//If a bot has a sniper rifle they should scope in to improve their aim
-									BotAIFix.BotPressButton(player, IN_ZOOM);
-								}
-							}
-						}
-						
-						if(melee_distance >= dist && item != null && tank_flee_distance < tank_dist && BotAIFix.CanTraceTo(player, common))
-						{
-							//If the infected get too close, bots should pull out their melee weapon if they have one
-							if(item.GetClassname() == "weapon_melee" && holdingItem.GetClassname() != "weapon_melee")
-							{
-								player.SwitchToItem("weapon_melee");
-							}
-							else if(item.GetClassname() == "weapon_chainsaw" && holdingItem.GetClassname() != "weapon_chainsaw")
-							{
-								player.SwitchToItem("weapon_chainsaw");
-								BotAIFix.BotPressButton(player, IN_SHOVE, 2.7); //This will help bots shove with the chainsaw upon pulling it out
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 

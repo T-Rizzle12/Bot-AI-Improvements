@@ -61,6 +61,37 @@ printl("Bot AI Fix starting up!")
 		BotAIFix.OnPlayerSpawn(player, params);
 	}
 }
+::BotAIFix.Events.OnGameEvent_player_death <- function (params)
+{
+	if ("userid" in params)
+	{
+		local player = g_MapScript.GetPlayerFromUserID(params["userid"]);
+		
+		if (player.GetPlayerUserId() in ::BotAIFix.Survivors)
+		{
+			printl("Removed dead survivor from ::BotAIFix.Survivors");
+			delete ::BotAIFix.Survivors[player.GetPlayerUserId()];
+		}
+		
+		if (player.GetPlayerUserId() in ::BotAIFix.Bots)
+		{
+			printl("Removed dead survivor bot from ::BotAIFix.Bots");
+			delete ::BotAIFix.Bots[player.GetPlayerUserId()];
+		}
+		
+		if (player.GetPlayerUserId() in ::BotAIFix.Tanks)
+		{
+			printl("Removed dead tank from ::BotAIFix.Tanks");
+			delete ::BotAIFix.Tanks[player.GetPlayerUserId()];
+		}
+		
+		if (player.GetPlayerUserId() in ::BotAIFix.Special)
+		{
+			printl("Removed dead special infected from ::BotAIFix.Special");
+			delete ::BotAIFix.Special[player.GetPlayerUserId()];
+		}
+	}
+}
 ::BotAIFix.Events.OnGameEvent_player_bot_replace <- function (params)
 {
 	local player = g_MapScript.GetPlayerFromUserID(params["player"]);
@@ -82,11 +113,6 @@ printl("Bot AI Fix starting up!")
 	local smoker = g_MapScript.GetPlayerFromUserID(params["userid"]);
 	
 	BotAIFix.OnSmokerTongueGrab(player, smoker, params);
-}
-::BotAIFix.Events.OnGameEvent_revive_success <- function (params)
-{	
-	local player = g_MapScript.GetPlayerFromUserID(params["subject"]);
-	BotAIFix.OnReviveEnd(player, params);
 }
 
 __CollectEventCallbacks(::BotAIFix.Events, "OnGameEvent_", "GameEventCallbacks", RegisterScriptGameEventListener);
