@@ -1,6 +1,3 @@
-# Bot-AI-Improvements
-I noticed that bots are lacking in many features, this mod is made to be compatible with the mod Left 4 Bots and to add onto it. Like an DLC/ADDON
-
 # Important:
 When this addon receives an update the setting.txt and const.nut will NOT automaticaly add the new cvars to said files, you have two choices either delete the setting.txt and const.nut and let this addon recreate them with the new cvars or use this list of [Addon Settings](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/5002961597086361319/) and manually add the new cvars, if this addon does not detect one of the cvars in the setting.txt it will use this addons default settings as a failsafe.
 Also, if you notice certain features are not working, “bots not pulling on their melee weapons when a common infected gets too close,” your setting.txt and/or const.nut may be corrupted or has a typo, you should delete the file and let this addon recreate it. I am working on having this addon automatically fixing said issue.
