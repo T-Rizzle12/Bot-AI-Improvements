@@ -1258,7 +1258,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		else
 		{
 			//This will increase sb_max_team_melee_weapons by the amount of players with melee weapons and bots with chainsaws
-			Convars.SetValue("sb_max_team_melee_weapons", current_team_melee + BotAIFix.max_melee + BotAIFix.old_sb_max_team_melee_weapons);
+			Convars.SetValue("sb_max_team_melee_weapons", current_team_melee);
 		}
 	}
 
