@@ -27,9 +27,9 @@ If you want more information on the features of this addon here is a link that e
 You can customize this addon's cvars, here is a guide on what each cvars does: [Changing Addon Settings](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/5002961597086361319/)
 
 # Todo:
-- Fix bots only wanting to pickup melee weapons
-- Improve bots ability to deal with nearby common infected
-- Improve the method that forces bots to press buttons
+- [x] Fix bots only wanting to pickup melee weapons
+- [] Improve bots ability to deal with nearby common infected
+- [x] Improve the method that forces bots to press buttons
 
 # Important Discussions:
 - [Suggestions](https://steamcommunity.com/workshop/filedetails/discussion/2859700506/6382186451026657878/)
