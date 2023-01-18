@@ -341,12 +341,12 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			Convars.SetValue("sb_path_lookahead_range", 300); //This is how far away a bot will look ahead of the group, until I find a good number I will leave it ridiculously high
 			Convars.SetValue("sb_reachability_cache_lifetime", 0); //This is how long a bot will consider an area walkable, if said area becomes blocked or hazardous the bot will not mark it unsafe until this time has passed
 			Convars.SetValue("sb_rescue_vehicle_loading_range", 30); //This is how close a bot will try to be to an escape vehicle
-			Convars.SetValue("sb_separation_danger_max_range", 550); //If a player or bot gets this far from the group a bot will goto them to prevent them from being alone
+			Convars.SetValue("sb_separation_danger_max_range", 300); //If a player or bot gets this far from the group a bot will goto them to prevent them from being alone
 			Convars.SetValue("sb_separation_danger_min_range ", 150); //If a bot gets this far from the group the bot will focus on getting back to the group
-			Convars.SetValue("sb_separation_range", 550); //This is how far apart each player and bot should be from each other, doesn't work very often
+			Convars.SetValue("sb_separation_range", 300); //This is how far apart each player and bot should be from each other, doesn't work very often
 			Convars.SetValue("sb_sidestep_for_horde", 1); //Bots will sidestep during hordes to acquire new infected targets
 			Convars.SetValue("sb_temp_health_consider_factor", 0.8); //Temp health will be multipled by this when bots consider who needs healing
-			Convars.SetValue("sb_close_threat_range", 60); //This causes bots to focus on the one zombie that enters this range until said zombie is either dead or has left said range
+			Convars.SetValue("sb_close_threat_range", 50); //This causes bots to focus on the one zombie that enters this range until said zombie is either dead or has left said range
 			Convars.SetValue("sb_threat_close_range", 50); //This causes bots to not waste time aiming at infected if they enter this range even if when the bot will miss said shot
 			Convars.SetValue("sb_threat_exposure_stop", 300000); //Unknown what this does yet
 			Convars.SetValue("sb_threat_exposure_walk", 150000); //Unknown what this does yet
@@ -598,14 +598,14 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 	{
 		if(player && player.IsValid())
 		{
-			NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") & (~button));
+			NetProps.SetPropInt(player, "m_afButtonForced", NetProps.GetPropInt(player, "m_afButtonForced") & ~(button));
 		}
 	}
 	::BotAIFix.PlayerUnDisableButton <- function (player, button)
 	{
 		if(player && player.IsValid())
 		{
-			NetProps.SetPropInt(player, "m_afButtonDisabled", NetProps.GetPropInt(player, "m_afButtonDisabled") & (~button));
+			NetProps.SetPropInt(player, "m_afButtonDisabled", NetProps.GetPropInt(player, "m_afButtonDisabled") & ~(button));
 		}
 	}
 	::BotAIFix.PlayerDisableButton <- function (player, button, holdtime = 0.1)
@@ -819,6 +819,8 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		BotAIFixTimers.AddTimer("ValidCheck", 1.0, BotAIFix.ValidCheck, {}, true);
 		BotAIFixTimers.AddTimer("FireCheck", 1.0, BotAIFix.FireCheck, {}, true);
 		BotAIFixTimers.AddTimer("MiscThink", 1.0, BotAIFix.MiscThink, {}, true);
+		BotAIFixTimers.AddTimer("TankFleeThink", 0.01, BotAIFix.TankFleeThink, {}, true);
+		
 		//This creates the think function for the AI improvements
 		local ThinkEnt = BotAIFix.FindThinkEnt();
 		
@@ -842,10 +844,14 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		BotAIFixTimers.RemoveTimer("FireCheck");
 		BotAIFixTimers.RemoveTimer("ValidCheck");
 		BotAIFixTimers.RemoveTimer("MiscThink");
+		BotAIFixTimers.RemoveTimer("TankFleeThink");
+		
+		//This is where the think function is deleted
 		local ThinkEnt = BotAIFix.FindThinkEnt();
 		if(ThinkEnt && ThinkEnt.IsValid())
 		{
-			DoEntFire("!self", "Kill", "", 0, null, ThinkEnt);
+			//DoEntFire("!self", "Kill", "", 0, null, ThinkEnt);
+			ThinkEnt.Kill();
 			printl("BAI Entity deleted");
 		}
 		
@@ -926,6 +932,20 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		}
 		
 		return BOTAIFIX_THINK_RATE;
+	}
+	::BotAIFix.TankFleeThink <- function (params)
+	{
+		if(150 >= tank_dist)
+		{
+			local velocity = player.GetVelocity();
+			player.SetVelocity(Vector(-220, velocity.y, velocity.z)); //This is kind of a cheat because the bot will be able to move at the speed of a player with green health, Note: Doesn't appear to work though :(
+		}
+		else if(tank_flee_distance >= tank_dist)
+		{
+			//This tells bots to flee from the nearby tank
+			CommandABot( { cmd = 0, target = tank, bot = player } ); //I think the attack command overrides the revive command
+			CommandABot( { cmd = 2, target = tank, bot = player } );
+		}
 	}
 	::BotAIFix.IncapThink <- function ()
 	{
@@ -1035,14 +1055,6 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							}
 							if(tank && tank.IsValid() && Director.IsTankInPlay())
 							{
-								if(800 >= tank_dist)
-								{
-									//This tells bots to flee from the nearby tank
-									CommandABot( { cmd = 0, target = tank, bot = player } ); //I think the attack command overrides the revive command
-									CommandABot( { cmd = 2, target = tank, bot = player } );
-									//local velocity = player.GetVelocity();
-									//player.ApplyAbsVelocityImpulse(Vector(-1 * velocity.x, velocity.y, velocity.z)); //This is kind of a cheat because the bot will be able to move at the speed of a player with green health, Note: Doesn't appear to work though :(
-								}
 								if(tank_revive_abandon_distance >= tank_dist && NetProps.GetPropInt(player, "m_reviveTarget") > 0)
 								{
 									//This makes bots abandon revives when a tank gets too close
