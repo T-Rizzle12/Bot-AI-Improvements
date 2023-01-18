@@ -28,7 +28,7 @@ You can customize this addon's cvars, here is a guide on what each cvars does: [
 
 # Todo:
 - [x] Fix bots only wanting to pickup melee weapons
-- [] Improve bots ability to deal with nearby common infected
+- [ ] Improve bots ability to deal with nearby common infected
 - [x] Improve the method that forces bots to press buttons
 
 # Important Discussions:
