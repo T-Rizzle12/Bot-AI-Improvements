@@ -689,7 +689,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 				DoEntFire("!self", "SetParent", "!activator", 0, fire, ent); // I parent the nav blocker to the fire entity so it is automatically killed when the fire is gone
 				DoEntFire("!self", "BlockNav", "", 0, null, ent);
 				DoEntFire("!self", "UnblockNav", "", fire_time, null, ent); //This should fix the bug of nav areas staying blocked even after the fire is gone
-				//DoEntFire("!self", "RunScriptCode", "printl(\"Unblocked\")", fire_time, null, ent); //This was to check if the nav_area was unblocked
+				DoEntFire("!self", "RunScriptCode", "printl(\"Unblocked\")", fire_time, null, ent); //This was to check if the nav_area was unblocked
 			}
 		}
 	}
@@ -882,12 +882,13 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 				local holdingItem = chainsaw_fix.GetClassname();
 				player.SwitchToItem(holdingItem);
 				BotAIFix.PlayerUnDisableButton(player, IN_ATTACK);
-				BotAIFix.BotStopPressingButton(player, IN_ATTACK);
-				BotAIFix.BotStopPressingButton(player, IN_SHOVE);
+				BotAIFix.BotStopPressingButton(player, IN_ATTACK | IN_SHOVE);
 				return holdingItem;
 			}
 			else
 			{
+				BotAIFix.PlayerUnDisableButton(player, IN_ATTACK);
+				BotAIFix.BotStopPressingButton(player, IN_ATTACK | IN_SHOVE);
 				return false;
 			}
 		}
@@ -1224,14 +1225,6 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							//printl("Shove!!");
 							BotAIFix.BotPressButton(player, IN_SHOVE, 0.1, common, -6, 0, true);
 							CommandABot( { cmd = 2, target = common, bot = player } );
-							if(holdingItem.GetClassname() == "weapon_melee")
-							{
-								//This should make bots with melee will move backwards if they had to shove an common infected
-								BotAIFix.BotPressButton(player, IN_BACK, 2.0);
-								BotAIFix.PlayerDisableButton(player, IN_FORWARD, 2.0);
-								BotAIFix.PlayerDisableButton(player, IN_LEFT, 2.0);
-								BotAIFix.PlayerDisableButton(player, IN_RIGHT, 2.0);
-							}
 						}
 						
 						if(melee_distance >= dist && item && item.IsValid() && tank_flee_distance < tank_dist && BotAIFix.CanTraceTo(player, common))
