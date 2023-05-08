@@ -1121,13 +1121,13 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 									player.SwitchToItem(secondary_weapon);
 									BotAIFix.BotPressButton(player, IN_RELOAD, 0.1);
 								}
-								else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && (main_weapon == "weapon_sniper_scout" || main_weapon == "weapon_sniper_military" || main_weapon == "weapon_sniper_awp" || main_weapon == "weapon_hunting_rifle"))
+								else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist || 500 > witch_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0 && (main_weapon == "weapon_sniper_scout" || main_weapon == "weapon_sniper_military" || main_weapon == "weapon_sniper_awp" || main_weapon == "weapon_hunting_rifle"))
 							    	{
 									//Bots with sniper rifles should only use their pistols if infected get too close
 									player.SwitchToItem(main_weapon);
 							    	}
 							}
-							else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0)
+							else if((melee_abandon_distance < dist || tank_flee_distance > tank_dist || 500 > witch_dist) && NetProps.GetPropIntArray(player, "m_iAmmo", PrimType) > 0)
 							{
 								//If the infected get too far the bot should swap back to their primary weapon if they have one and it has ammo
 								player.SwitchToItem(main_weapon);
@@ -1197,12 +1197,12 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 					local holdingItem = BotAIFix.ValidWeaponCheck(player, player.GetActiveWeapon());
 					if(holdingItem && holdingItem.IsValid() && holdingItem.GetClassname() != "weapon_gascan" && holdingItem.GetClassname() != "weapon_cola_bottles" && holdingItem.GetClassname() != "weapon_pipe_bomb" && holdingItem.GetClassname() != "weapon_vomitjar" && holdingItem.GetClassname() != "weapon_molotov" && holdingItem.GetClassname() != "weapon_pain_pills" && holdingItem.GetClassname() != "weapon_adrenaline" && holdingItem.GetClassname() != "weapon_first_aid_kit" && holdingItem.GetClassname() != "weapon_defibrillator")
 					{
-						if((close_player_distance <= player_dist || witch_dist < 500) && !BotAIFix.SurvivorsHeld() || Director.IsFinaleVehicleReady())
+						if((close_player_distance <= player_dist || witch_dist < 500 || tank_flee_distance > tank_dist) && !BotAIFix.SurvivorsHeld() || Director.IsFinaleVehicleReady())
 						{
 							//This makes bots with melee weapons not stray too far from the group
 							Convars.SetValue("sb_melee_approach_victim", 0);
 						}
-						if(BotAIFix.SurvivorsHeld() || close_player_distance > player_dist && witch_dist >= 500 && !Director.IsFinaleVehicleReady())
+						if(BotAIFix.SurvivorsHeld() || close_player_distance > player_dist && tank_flee_distance <= tank_dist && 500 <= witch_dist && !Director.IsFinaleVehicleReady())
 						{
 							//This makes bots with melee weapons attack nearby zombies more effectively
 							Convars.SetValue("sb_melee_approach_victim", 1);
@@ -1231,7 +1231,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 							CommandABot( { cmd = 2, target = common, bot = player } );
 						}
 						
-						if(melee_distance >= dist && item && item.IsValid() && tank_flee_distance < tank_dist && BotAIFix.CanTraceTo(player, common))
+						if(melee_distance >= dist && item && item.IsValid() && tank_flee_distance < tank_dist && 500 <= witch_dist &&  && BotAIFix.CanTraceTo(player, common))
 						{
 							//If the infected get too close, bots should pull out their melee weapon if they have one
 							if(item.GetClassname() == "weapon_melee" && holdingItem.GetClassname() != "weapon_melee")
