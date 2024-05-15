@@ -44,7 +44,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 		close_player_distance = 400
 		special_shove_distance = 100
 		spit_uncrouch_distance = 200
-		tank_flee_distance = 500
+		tank_flee_distance = 800
 		tank_revive_abandon_distance = 400
 		incap_shoot_distance = 200
 		old_sb_max_team_melee_weapons = 0
@@ -344,7 +344,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			Convars.SetValue("sb_near_hearing_range", 2500); //This is the range when a bot hears something that they should be worried about
 			Convars.SetValue("sb_neighbor_range", 100); //This is how close a bot needs to be to another survivor in order for the bot to feel safe
 			Convars.SetValue("sb_normal_saccade_speed", 1500); //This is the bots "mouse sensitivity" when they are not fighting a horde, attacking wandering common infected is a good example of when this is used
-			Convars.SetValue("sb_path_lookahead_range", 10); //Minimum range movement goal must be along path
+			Convars.SetValue("sb_path_lookahead_range", 300); //Minimum range movement goal must be along path
 			Convars.SetValue("sb_reachability_cache_lifetime", 0); //This is how long a bot will consider an area walkable, if said area becomes blocked or hazardous the bot will not mark it unsafe until this time has passed
 			Convars.SetValue("sb_rescue_vehicle_loading_range", 30); //This is how close a bot will try to be to an escape vehicle
 			Convars.SetValue("sb_separation_danger_max_range", 550); //If a player or bot gets this far from the group a bot will goto them to prevent them from being alone
@@ -630,7 +630,7 @@ const IN_ZOOM = 524288; //Slimzo helped me find the bit number for this button
 			if (surv && surv.IsValid() && surv.IsDominatedBySpecialInfected())
 			{
 				local dominator = surv.GetSpecialInfectedDominatingMe();
-				if(type == null || type = dominator.GetZombieType())
+				if(type == null || (("GetZombieType" in dominator) && type == dominator.GetZombieType()))
 				{
 					return true;
 				}
